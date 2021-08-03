@@ -65,10 +65,10 @@ const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'helloworld-keypair.json');
  * The state of a greeting account managed by the hello world program
  */
 class GreetingAccount {
-  counter = 0;
-  constructor(fields: {counter: number} | undefined = undefined) {
+  game_field = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  constructor(fields: {game_field: [number]} | undefined = undefined) {
     if (fields) {
-      this.counter = fields.counter;
+      this.game_field = fields.game_field;
     }
   }
 }
@@ -77,7 +77,7 @@ class GreetingAccount {
  * Borsh schema definition for greeting accounts
  */
 const GreetingSchema = new Map([
-  [GreetingAccount, {kind: 'struct', fields: [['counter', 'u32']]}],
+  [GreetingAccount, {kind: 'struct', fields: [['game_field', [9]]]}],
 ]);
 
 /**
@@ -230,15 +230,13 @@ export async function reportGreetings(): Promise<void> {
   if (accountInfo === null) {
     throw 'Error: cannot find the greeted account';
   }
-  const greeting = borsh.deserialize(
+  const greeting: GreetingAccount = borsh.deserialize(
     GreetingSchema,
     GreetingAccount,
     accountInfo.data,
   );
-  console.log(
-    greetedPubkey.toBase58(),
-    'has been greeted',
-    greeting.counter,
-    'time(s)',
-  );
+
+  console.log(`${greeting.game_field[0]} | ${greeting.game_field[1]} | ${greeting.game_field[2]}`)
+  console.log(`${greeting.game_field[3]} | ${greeting.game_field[4]} | ${greeting.game_field[5]}`)
+  console.log(`${greeting.game_field[6]} | ${greeting.game_field[7]} | ${greeting.game_field[8]}`)
 }
