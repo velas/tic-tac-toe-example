@@ -29,7 +29,7 @@ async function getConfig(): Promise<any> {
   const CONFIG_FILE_PATH = path.resolve(
     os.homedir(),
     '.config',
-    'solana',
+    'velas',
     'cli',
     'config.yml',
   );
