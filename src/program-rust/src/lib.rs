@@ -1,4 +1,4 @@
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::{BorshDeserialize, BorshSerialize, BorshSchema};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint,
@@ -8,10 +8,10 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
-#[derive(BorshSerialize, BorshDeserialize, Debug, PartialEq, Eq)]
+#[derive(BorshSchema, BorshSerialize, BorshDeserialize, Debug, PartialEq, Eq)]
 pub enum Sign { Tic, Tac }
 
-#[derive(BorshSerialize, BorshDeserialize, Debug)]
+#[derive(BorshSchema, BorshSerialize, BorshDeserialize, Debug)]
 pub enum Instruction {
     GameReset,
     MakeTurn {
@@ -21,7 +21,7 @@ pub enum Instruction {
 }
 
 /// Define the type of state stored in accounts
-#[derive(BorshSerialize, BorshDeserialize, Debug)]
+#[derive(BorshSchema, BorshSerialize, BorshDeserialize, Debug)]
 pub struct GameState {
     pub play_field: [u8; 9],
     pub next_turn: Sign
@@ -126,6 +126,10 @@ mod test {
         let make_turn_2 = Instruction::MakeTurn { col: 1, row: 1}.try_to_vec().unwrap();
         let game_reset = Instruction::GameReset.try_to_vec().unwrap();
 
+        assert_eq!(make_turn_1, [0x01, 0x00, 0x00]);
+        assert_eq!(make_turn_2, [0x01, 0x01, 0x01]);
+        assert_eq!(game_reset, [0x00]);
+
         process_instruction(&program_id, &accounts, &make_turn_1).unwrap();
         // let account = GameState::try_from_slice(&accounts[0].data.borrow()).unwrap();
         let account = GameState::try_from_slice(&accounts[0].data.borrow()).unwrap();
@@ -176,6 +180,13 @@ mod test {
 
             let dyn_sized = DynSizedEnum::B(vec![11, 22, 33]).try_to_vec().unwrap();
             assert_eq!(dyn_sized, [1, 3, 0, 0, 0, 11, 0, 22, 0, 33, 0]);
+        }
+
+        {
+            let a = GameState::schema_container();
+            let b = GameState::declaration();
+            println!("{:?}", a);
+            println!("{:?}", b);
         }
     }
 }

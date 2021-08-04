@@ -6,11 +6,12 @@ import {
   establishConnection,
   establishPayer,
   checkProgram,
-  sayHello,
-  reportGreetings,
+  makeTurn as makeTurn,
+  reportGame as reportGameField,
 } from './hello_world';
 
 async function main() {
+  // console.log(Buffer.from([0x01, 0x00, 0x00]))
   console.log("Let's say hello to a Solana account...");
 
   // Establish connection to the cluster
@@ -22,11 +23,16 @@ async function main() {
   // Check if the program has been deployed
   await checkProgram();
 
-  // Say hello to an account
-  await sayHello();
+  // Make turn
+  await makeTurn([0x00]); // сброс поля
 
-  // Find out how many times that account has been greeted
-  await reportGreetings();
+  await makeTurn([0x01, 0x01, 0x01]); // ход в клетку с коорд. 1х1
+
+  await reportGameField();
+
+  await makeTurn([0x01, 0x01, 0x02]); // ход в клетку с коорд. 1х2
+
+  await reportGameField();
 
   console.log('Success');
 }

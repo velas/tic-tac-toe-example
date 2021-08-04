@@ -64,11 +64,13 @@ const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'helloworld-keypair.json');
 /**
  * The state of a greeting account managed by the hello world program
  */
-class GreetingAccount {
+class GameState {
   game_field = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  constructor(fields: {game_field: [number]} | undefined = undefined) {
+  next_turn = 0;
+  constructor(fields: {game_field: number[], next_turn: number} | undefined = undefined) {
     if (fields) {
       this.game_field = fields.game_field;
+      this.next_turn = fields.next_turn
     }
   }
 }
@@ -77,7 +79,7 @@ class GreetingAccount {
  * Borsh schema definition for greeting accounts
  */
 const GreetingSchema = new Map([
-  [GreetingAccount, {kind: 'struct', fields: [['game_field', [9]]]}],
+  [GameState, {kind: 'struct', fields: [['game_field', [9]], ['next_turn', 'u8']]}],
 ]);
 
 /**
@@ -85,7 +87,7 @@ const GreetingSchema = new Map([
  */
 const GREETING_SIZE = borsh.serialize(
   GreetingSchema,
-  new GreetingAccount(),
+  new GameState(),
 ).length;
 
 /**
@@ -205,15 +207,12 @@ export async function checkProgram(): Promise<void> {
   }
 }
 
-/**
- * Say hello
- */
-export async function sayHello(): Promise<void> {
-  console.log('Saying hello to', greetedPubkey.toBase58());
+export async function makeTurn(instruction_data: number[]): Promise<void> {
+  console.log('Making turn...', greetedPubkey.toBase58());
   const instruction = new TransactionInstruction({
     keys: [{pubkey: greetedPubkey, isSigner: false, isWritable: true}],
     programId,
-    data: Buffer.alloc(0), // All instructions are hellos
+    data: Buffer.from(instruction_data),
   });
   await sendAndConfirmTransaction(
     connection,
@@ -225,18 +224,23 @@ export async function sayHello(): Promise<void> {
 /**
  * Report the number of times the greeted account has been said hello to
  */
-export async function reportGreetings(): Promise<void> {
+export async function reportGame(): Promise<void> {
   const accountInfo = await connection.getAccountInfo(greetedPubkey);
   if (accountInfo === null) {
     throw 'Error: cannot find the greeted account';
   }
-  const greeting: GreetingAccount = borsh.deserialize(
+  // let arr = [...accountInfo.data]
+  // console.log(`buffer data: ${arr}`)
+
+  const greeting: GameState = borsh.deserialize(
     GreetingSchema,
-    GreetingAccount,
+    GameState,
     accountInfo.data,
   );
 
   console.log(`${greeting.game_field[0]} | ${greeting.game_field[1]} | ${greeting.game_field[2]}`)
+  console.log('---------')
   console.log(`${greeting.game_field[3]} | ${greeting.game_field[4]} | ${greeting.game_field[5]}`)
+  console.log('---------')
   console.log(`${greeting.game_field[6]} | ${greeting.game_field[7]} | ${greeting.game_field[8]}`)
 }
