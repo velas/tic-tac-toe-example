@@ -78,15 +78,15 @@ class GameState {
 /**
  * Borsh schema definition for greeting accounts
  */
-const GreetingSchema = new Map([
+const GameSchema = new Map([
   [GameState, {kind: 'struct', fields: [['game_field', [9]], ['next_turn', 'u8']]}],
 ]);
 
 /**
  * The expected size of each greeting account.
  */
-const GREETING_SIZE = borsh.serialize(
-  GreetingSchema,
+const GAME_STATE_SIZE = borsh.serialize(
+  GameSchema,
   new GameState(),
 ).length;
 
@@ -109,7 +109,7 @@ export async function establishPayer(): Promise<void> {
     const {feeCalculator} = await connection.getRecentBlockhash();
 
     // Calculate the cost to fund the greeter account
-    fees += await connection.getMinimumBalanceForRentExemption(GREETING_SIZE);
+    fees += await connection.getMinimumBalanceForRentExemption(GAME_STATE_SIZE);
 
     // Calculate the cost of sending transactions
     fees += feeCalculator.lamportsPerSignature * 100; // wag
@@ -189,7 +189,7 @@ export async function checkProgram(): Promise<void> {
       'to say hello to',
     );
     const lamports = await connection.getMinimumBalanceForRentExemption(
-      GREETING_SIZE,
+      GAME_STATE_SIZE,
     );
 
     const transaction = new Transaction().add(
@@ -199,7 +199,7 @@ export async function checkProgram(): Promise<void> {
         seed: GREETING_SEED,
         newAccountPubkey: greetedPubkey,
         lamports,
-        space: GREETING_SIZE,
+        space: GAME_STATE_SIZE,
         programId,
       }),
     );
@@ -222,25 +222,32 @@ export async function makeTurn(instruction_data: number[]): Promise<void> {
 }
 
 /**
- * Report the number of times the greeted account has been said hello to
+ * Show status of the game field
  */
 export async function reportGame(): Promise<void> {
   const accountInfo = await connection.getAccountInfo(greetedPubkey);
   if (accountInfo === null) {
     throw 'Error: cannot find the greeted account';
   }
-  // let arr = [...accountInfo.data]
-  // console.log(`buffer data: ${arr}`)
 
   const greeting: GameState = borsh.deserialize(
-    GreetingSchema,
+    GameSchema,
     GameState,
     accountInfo.data,
   );
 
-  console.log(`${greeting.game_field[0]} | ${greeting.game_field[1]} | ${greeting.game_field[2]}`)
-  console.log('---------')
-  console.log(`${greeting.game_field[3]} | ${greeting.game_field[4]} | ${greeting.game_field[5]}`)
-  console.log('---------')
-  console.log(`${greeting.game_field[6]} | ${greeting.game_field[7]} | ${greeting.game_field[8]}`)
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 3; col++) {
+      let fieldContent = greeting.game_field[row * 3 + col];
+      let drawSign = '*'
+      if (fieldContent == 1) {
+        drawSign = 'X'
+      }
+      if (fieldContent == 2) {
+        drawSign = '0'
+      }
+      process.stdout.write(drawSign)
+    }
+    process.stdout.write('\n')
+  }
 }
