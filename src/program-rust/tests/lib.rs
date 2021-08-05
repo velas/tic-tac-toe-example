@@ -1,11 +1,12 @@
-use borsh::BorshDeserialize;
-use helloworld::{process_instruction, GameState};
+use borsh::{BorshSerialize, BorshDeserialize};
+use helloworld::{GameCell, GameInstruction, GameState, process_instruction};
+use solana_program::borsh::get_packed_len as borsh_packed_len;
 use solana_program_test::*;
 use solana_sdk::{
     account::Account,
     instruction::{AccountMeta, Instruction},
     pubkey::Pubkey,
-    signature::{Signer, Keypair},
+    signature::{Keypair, Signer},
     transaction::Transaction,
 };
 
@@ -25,7 +26,7 @@ async fn test_helloworld() {
         game_account_pubkey,
         Account {
             lamports: 50000,
-            data: vec![0_u8; 10], // fixme: wrong size
+            data: vec![0_u8; borsh_packed_len::<GameState>()],
             owner: program_id,
             ..Account::default()
         },
@@ -46,7 +47,7 @@ async fn test_helloworld() {
 
     let (mut banks_client, _, recent_blockhash) = program_test.start().await;
 
-    // Game field is empty
+    // Play field is empty
     let tic_tac_account = banks_client
         .get_account(game_account_pubkey)
         .await
@@ -55,13 +56,18 @@ async fn test_helloworld() {
 
     assert_eq!(
         GameState::try_from_slice(&tic_tac_account.data).unwrap().play_field,
-        [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        [
+            GameCell::Empty, GameCell::Empty, GameCell::Empty,
+            GameCell::Empty, GameCell::Empty, GameCell::Empty,
+            GameCell::Empty, GameCell::Empty, GameCell::Empty,
+        ]
     );
 
-    // Make move
+    // Make turn
     let mut transaction = Transaction::new_with_payer(
         &[Instruction::new_with_bincode(
             program_id,
+            // &GameInstruction::MakeTurn { row: 0, col: 0 }.try_to_vec().unwrap(),
             &[1u8, 0, 0],
             vec![
                 AccountMeta::new(game_account_pubkey, false),
@@ -82,14 +88,19 @@ async fn test_helloworld() {
 
     assert_eq!(
         GameState::try_from_slice(&game_account.data).unwrap().play_field,
-        [1, 0, 0, 0, 0, 0, 0, 0, 0]
+        [
+            GameCell::Tic, GameCell::Empty, GameCell::Empty,
+            GameCell::Empty, GameCell::Empty, GameCell::Empty,
+            GameCell::Empty, GameCell::Empty, GameCell::Empty,
+        ]
     );
 
     // Make second turn
     let mut transaction = Transaction::new_with_payer(
         &[Instruction::new_with_bincode(
             program_id,
-            &[1u8, 0, 1], // ignored but makes the instruction unique in the slot
+            // &GameInstruction::MakeTurn { row: 0, col: 1 }.try_to_vec().unwrap(),
+            &[1u8, 0, 1],
             vec![
                 AccountMeta::new(game_account_pubkey, false),
                 AccountMeta::new(player_two.pubkey(), true),
@@ -106,8 +117,19 @@ async fn test_helloworld() {
         .await
         .expect("get_account")
         .expect("game_account not found");
+
     assert_eq!(
         GameState::try_from_slice(&game_account.data).unwrap().play_field,
-        [1, 2, 0, 0, 0, 0, 0, 0, 0]
+        [
+            GameCell::Tic, GameCell::Tac, GameCell::Empty,
+            GameCell::Empty, GameCell::Empty, GameCell::Empty,
+            GameCell::Empty, GameCell::Empty, GameCell::Empty,
+        ]
     );
+}
+
+#[test]
+fn lol() {
+    let a: &[u8] = &GameInstruction::MakeTurn { row: 0, col: 0 }.try_to_vec().unwrap();
+    assert_eq!(a, [1u8, 0, 0]);
 }
