@@ -1,4 +1,4 @@
-use borsh::{BorshSerialize, BorshDeserialize};
+use borsh::BorshDeserialize;
 use helloworld::{GameCell, GameInstruction, GameState, process_instruction};
 use solana_program::borsh::get_packed_len as borsh_packed_len;
 use solana_program_test::*;
@@ -65,10 +65,9 @@ async fn test_helloworld() {
 
     // Make turn
     let mut transaction = Transaction::new_with_payer(
-        &[Instruction::new_with_bincode(
+        &[Instruction::new_with_borsh(
             program_id,
-            // &GameInstruction::MakeTurn { row: 0, col: 0 }.try_to_vec().unwrap(),
-            &[1u8, 0, 0],
+            &GameInstruction::MakeTurn { row: 0, col: 0 },
             vec![
                 AccountMeta::new(game_account_pubkey, false),
                 AccountMeta::new(player_one.pubkey(), true)
@@ -97,10 +96,9 @@ async fn test_helloworld() {
 
     // Make second turn
     let mut transaction = Transaction::new_with_payer(
-        &[Instruction::new_with_bincode(
+        &[Instruction::new_with_borsh(
             program_id,
-            // &GameInstruction::MakeTurn { row: 0, col: 1 }.try_to_vec().unwrap(),
-            &[1u8, 0, 1],
+            &GameInstruction::MakeTurn { row: 0, col: 1 },
             vec![
                 AccountMeta::new(game_account_pubkey, false),
                 AccountMeta::new(player_two.pubkey(), true),
@@ -126,10 +124,4 @@ async fn test_helloworld() {
             GameCell::Empty, GameCell::Empty, GameCell::Empty,
         ]
     );
-}
-
-#[test]
-fn lol() {
-    let a: &[u8] = &GameInstruction::MakeTurn { row: 0, col: 0 }.try_to_vec().unwrap();
-    assert_eq!(a, [1u8, 0, 0]);
 }
