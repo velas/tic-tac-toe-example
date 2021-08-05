@@ -62,10 +62,10 @@ pub fn process_instruction(
     let account = next_account_info(accounts_iter)?;
 
     // The account must be owned by the program in order to modify its data
-    if account.owner != program_id {
-        msg!("Greeted account does not have the correct program id");
-        return Err(ProgramError::IncorrectProgramId);
-    }
+    // if account.owner != program_id {
+    //     msg!("Greeted account does not have the correct program id");
+    //     return Err(ProgramError::IncorrectProgramId);
+    // }
 
     // Increment and store the number of times the account has been greeted
     let mut game_account = GameState::try_from_slice(&account.data.borrow())?;
