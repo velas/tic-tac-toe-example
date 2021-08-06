@@ -40,7 +40,7 @@ let programId: PublicKey;
 /**
  * The public key of the account we are saying hello to
  */
-let greetedPubkey: PublicKey;
+let gamePubkey: PublicKey;
 
 /**
  * Path to program files
@@ -62,28 +62,51 @@ const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'helloworld.so');
 const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'helloworld-keypair.json');
 
 /**
- * The state of a greeting account managed by the hello world program
+ * The state of a game account managed by the tic-tac-toe program
  */
 class GameState {
-  game_field = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  next_turn = 0;
-  constructor(fields: {game_field: number[], next_turn: number} | undefined = undefined) {
+  play_field = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  status = 0;
+  player_one = PublicKey.default;
+  player_two = PublicKey.default;
+
+  constructor(
+    fields: {
+      play_field: number[],
+      status: number,
+      player_one: PublicKey,
+      player_two: PublicKey
+    } | undefined = undefined
+  ) {
     if (fields) {
-      this.game_field = fields.game_field;
-      this.next_turn = fields.next_turn
+      this.play_field = fields.play_field;
+      this.status = fields.status;
+      this.player_one = fields.player_one;
+      this.player_two = fields.player_two;
     }
   }
 }
 
 /**
- * Borsh schema definition for greeting accounts
+ * Borsh schema definition for game account
  */
 const GameSchema = new Map([
-  [GameState, {kind: 'struct', fields: [['game_field', [9]], ['next_turn', 'u8']]}],
+  [
+    GameState, 
+    {
+      kind: 'struct',
+      fields: [
+        ['play_field', [9]],
+        ['status', 'u8'],
+        ['player_one', [32]],
+        ['player_two', [32]]
+      ]
+    }
+  ],
 ]);
 
 /**
- * The expected size of each greeting account.
+ * The expected size of game account.
  */
 const GAME_STATE_SIZE = borsh.serialize(
   GameSchema,
@@ -108,7 +131,7 @@ export async function establishPayer(): Promise<void> {
   if (!payer) {
     const {feeCalculator} = await connection.getRecentBlockhash();
 
-    // Calculate the cost to fund the greeter account
+    // Calculate the cost to fund the game account
     fees += await connection.getMinimumBalanceForRentExemption(GAME_STATE_SIZE);
 
     // Calculate the cost of sending transactions
@@ -172,21 +195,21 @@ export async function checkProgram(): Promise<void> {
   }
   console.log(`Using program ${programId.toBase58()}`);
 
-  // Derive the address (public key) of a greeting account from the program so that it's easy to find later.
-  const GREETING_SEED = 'hello';
-  greetedPubkey = await PublicKey.createWithSeed(
+  // Derive the address (public key) of a game account from the program so that it's easy to find later.
+  const GAME_SEED = 'hello';
+  gamePubkey = await PublicKey.createWithSeed(
     payer.publicKey,
-    GREETING_SEED,
+    GAME_SEED,
     programId,
   );
 
-  // Check if the greeting account has already been created
-  const greetedAccount = await connection.getAccountInfo(greetedPubkey);
-  if (greetedAccount === null) {
+  // Check if the game account has already been created
+  const gameAccount = await connection.getAccountInfo(gamePubkey);
+  if (gameAccount === null) {
     console.log(
       'Creating account',
-      greetedPubkey.toBase58(),
-      'to say hello to',
+      gamePubkey.toBase58(),
+      'to play at',
     );
     const lamports = await connection.getMinimumBalanceForRentExemption(
       GAME_STATE_SIZE,
@@ -196,8 +219,8 @@ export async function checkProgram(): Promise<void> {
       SystemProgram.createAccountWithSeed({
         fromPubkey: payer.publicKey,
         basePubkey: payer.publicKey,
-        seed: GREETING_SEED,
-        newAccountPubkey: greetedPubkey,
+        seed: GAME_SEED,
+        newAccountPubkey: gamePubkey,
         lamports,
         space: GAME_STATE_SIZE,
         programId,
@@ -208,9 +231,9 @@ export async function checkProgram(): Promise<void> {
 }
 
 export async function makeTurn(instruction_data: number[]): Promise<void> {
-  console.log('Making turn...', greetedPubkey.toBase58());
+  console.log('Making turn...', gamePubkey.toBase58());
   const instruction = new TransactionInstruction({
-    keys: [{pubkey: greetedPubkey, isSigner: false, isWritable: true}],
+    keys: [{pubkey: gamePubkey, isSigner: false, isWritable: true}],
     programId,
     data: Buffer.from(instruction_data),
   });
@@ -225,12 +248,12 @@ export async function makeTurn(instruction_data: number[]): Promise<void> {
  * Show status of the game field
  */
 export async function reportGame(): Promise<void> {
-  const accountInfo = await connection.getAccountInfo(greetedPubkey);
+  const accountInfo = await connection.getAccountInfo(gamePubkey);
   if (accountInfo === null) {
-    throw 'Error: cannot find the greeted account';
+    throw 'Error: cannot find the game account';
   }
 
-  const greeting: GameState = borsh.deserialize(
+  const gameState: GameState = borsh.deserialize(
     GameSchema,
     GameState,
     accountInfo.data,
@@ -238,7 +261,7 @@ export async function reportGame(): Promise<void> {
 
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
-      let fieldContent = greeting.game_field[row * 3 + col];
+      let fieldContent = gameState.play_field[row * 3 + col];
       let drawSign = '*'
       if (fieldContent == 1) {
         drawSign = 'X'
