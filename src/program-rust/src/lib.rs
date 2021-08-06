@@ -1,13 +1,25 @@
+#![allow(dead_code)]
+
 use borsh::{BorshDeserialize, BorshSerialize, BorshSchema};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
-    // borsh::get_packed_len as borsh_packed_len,
     entrypoint,
     entrypoint::ProgramResult,
     msg,
     program_error::ProgramError,
     pubkey::Pubkey,
 };
+
+static WIN_CONDITIONS: [[usize; 3]; 8] = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6]
+];
 
 #[derive(BorshSchema, BorshSerialize, BorshDeserialize, Copy, Clone, PartialEq, Eq, Debug)]
 pub enum GameCell { Empty, Tic, Tac }
@@ -31,7 +43,7 @@ pub enum GameInstruction {
     }
 }
 
-/// Define the type of state stored in accounts
+/// Define the type of state stored in game account
 #[derive(BorshSchema, BorshSerialize, BorshDeserialize, Debug)]
 pub struct GameState {
     pub play_field: [GameCell; 9],
@@ -63,10 +75,10 @@ entrypoint!(process_instruction);
 // Program entrypoint's implementation
 pub fn process_instruction(
     program_id: &Pubkey, // Public key of the account the hello world program was loaded into
-    accounts: &[AccountInfo], // The account to say hello to
+    accounts: &[AccountInfo], // Accounts of the game and player
     instruction_data: &[u8], // Ignored, all helloworld instructions are hellos
 ) -> ProgramResult {
-    msg!("Hello World Rust program entrypoint");
+    msg!("Tic-tac-toe game program entrypoint");
 
     // Iterating accounts is safer then indexing
     let accounts_iter = &mut accounts.iter();
@@ -84,47 +96,82 @@ pub fn process_instruction(
     // Increment and store the number of times the account has been greeted
     let mut game_state = GameState::try_from_slice(&game_account.data.borrow())?;
     
+    // Deserializing instruction into typed variable using `borsh` lib
     let instruction = GameInstruction::try_from_slice(instruction_data)?;
 
+    // Applying tic-tac-toe game logic here or reset the game
+    apply_instruction(&mut game_state, instruction, player_account.key)?;
+
+    // Check if game has ended
+    check_game_end(&mut game_state)?;
+
+    // 
+    game_state.serialize(&mut &mut game_account.data.borrow_mut()[..])?;
+
+    Ok(())
+}
+
+fn apply_instruction(
+    game: &mut GameState,
+    instruction: GameInstruction,
+    player_key: &Pubkey
+) -> ProgramResult
+{
     match instruction {
         GameInstruction::GameReset { player_one, player_two } => {
-            game_state.player_one = player_one;
-            game_state.player_two = player_two;
-            game_state.play_field = [GameCell::Empty; 9];
-            game_state.status = GameStatus::PlayerOneTurn;
+            game.player_one = player_one;
+            game.player_two = player_two;
+            game.play_field = [GameCell::Empty; 9];
+            game.status = GameStatus::PlayerOneTurn;
         },
         GameInstruction::MakeTurn { row, col } => {
             if row <= 3 && col <= 3 {
                 let idx = (row * 3 + col) as usize;
-                match (game_state.status, game_state.play_field[idx]) {
+                match (game.status, game.play_field[idx]) {
                     (GameStatus::PlayerOneTurn, GameCell::Empty) => {
-                        if player_account.key == &game_state.player_one {
-                            game_state.play_field[idx] = GameCell::Tic;
-                            game_state.status = GameStatus::PlayerTwoTurn;
+                        if player_key == &game.player_one {
+                            game.play_field[idx] = GameCell::Tic;
+                            game.status = GameStatus::PlayerTwoTurn;
                         } else {
-                            msg!("You are not a player of this game")
+                            msg!("You are not a player of this game");
+                            return Err(ProgramError::InvalidInstructionData);
                         }
                     },
                     (GameStatus::PlayerTwoTurn, GameCell::Empty) => {
-                        if player_account.key == &game_state.player_two {
-                            game_state.play_field[idx] = GameCell::Tac;
-                            game_state.status = GameStatus::PlayerOneTurn;
+                        if player_key == &game.player_two {
+                            game.play_field[idx] = GameCell::Tac;
+                            game.status = GameStatus::PlayerOneTurn;
                         } else {
-                            msg!("You are not a player of this game")
+                            msg!("You are not a player of this game");
+                            return Err(ProgramError::InvalidInstructionData);
                         }
                     },
                     (GameStatus::PlayerOneTurn, _) | (GameStatus::PlayerTwoTurn, _) => {
-                        msg!("This cell is not empty")
+                        msg!("This cell is not empty");
+                        return Err(ProgramError::InvalidInstructionData);
                     },
                     _ => {
-                        msg!("Making turn is not allowed, initialize game first")
+                        msg!("Making turn is not allowed, initialize game first");
+                        return Err(ProgramError::InvalidInstructionData);
                     }
                 }
             }
         }
     }
-    
-    game_state.serialize(&mut &mut game_account.data.borrow_mut()[..])?;
+
+    Ok(())
+}
+
+fn check_game_end(game: &mut GameState) -> ProgramResult {
+    for coord in WIN_CONDITIONS {
+        let x = game.play_field[coord[0]];
+        let y = game.play_field[coord[1]];
+        let z = game.play_field[coord[2]];
+
+        if x == y && y == z && x != GameCell::Empty {
+            game.status = GameStatus::GameEnd;
+        }
+    }
 
     Ok(())
 }

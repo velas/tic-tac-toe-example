@@ -1,31 +1,20 @@
 <p align="center">
-  <a href="https://solana.com">
-    <img alt="Solana" src="https://i.imgur.com/uBVzyX3.png" width="250" />
+  <a href="https://velas.com">
+    <img alt="Velas" src="https://i.imgur.com/uBVzyX3.png" width="250" />
   </a>
 </p>
 
-[![Build status][travis-image]][travis-url] [![Gitpod
-Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/solana-labs/example-helloworld)
+# Hello world on Velas
 
-[travis-image]:
-https://travis-ci.org/solana-labs/example-helloworld.svg?branch=master
-[travis-url]: https://travis-ci.org/solana-labs/example-helloworld
-
-# Hello world on Solana
-
-This project demonstrates how to use the [Solana Javascript
+This project demonstrates how to use the [Velas Javascript
 API](https://github.com/solana-labs/solana-web3.js) to
-interact with programs on the Solana blockchain.
+interact with programs on the Velas blockchain.
 
 The project comprises of:
 
 * An on-chain hello world program
 * A client that can send a "hello" to an account and get back the number of
   times "hello" has been sent
-
-## Translations
-- [Traditional Chinese](README_ZH_TW.md)
-- [Simplified Chinese](README_ZH_CN.md)
 
 ## Table of Contents
 - [Hello world on Solana](#hello-world-on-solana)

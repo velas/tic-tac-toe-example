@@ -34,8 +34,9 @@ async fn test_tic_tac_toe() {
 
     let player_one = Keypair::new();
     let player_two = Keypair::new();
+    let not_a_player = Keypair::new();
 
-    for player in [&player_one, &player_two] {
+    for player in [&player_one, &player_two, &not_a_player] {
         program_test.add_account(
             player.pubkey(),
             Account {
@@ -124,6 +125,22 @@ async fn test_tic_tac_toe() {
         ]
     );
     assert_eq!(game_state.status, GameStatus::PlayerOneTurn);
+
+    // Trying to do unauthorized turn
+    let mut transaction = Transaction::new_with_payer(
+        &[Instruction::new_with_borsh(
+            program_id,
+            &GameInstruction::MakeTurn { row: 1, col: 1 },
+            vec![
+                AccountMeta::new(game_account_pubkey, false),
+                AccountMeta::new(not_a_player.pubkey(), true),
+            ],
+        )],
+        Some(&not_a_player.pubkey()),
+    );
+    transaction.sign(&[&not_a_player], recent_blockhash);
+    let res_err = banks_client.process_transaction(transaction).await;
+    assert!(res_err.is_err())
 }
 
 async fn get_game_state(client: &mut BanksClient, game_pubkey: Pubkey) -> GameState {

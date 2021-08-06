@@ -11,8 +11,7 @@ import {
 } from './hello_world';
 
 async function main() {
-  // console.log(Buffer.from([0x01, 0x00, 0x00]))
-  console.log("Let's say hello to a Solana account...");
+  console.log("Let's say hello to a Velas account...");
 
   // Establish connection to the cluster
   await establishConnection();
@@ -24,13 +23,13 @@ async function main() {
   await checkProgram();
 
   // Make turn
-  await makeTurn([0x00]); // сброс поля
+  await makeTurn([0x00]); // game initialization
 
-  await makeTurn([0x01, 0x01, 0x01]); // ход в клетку с коорд. 1х1
+  await makeTurn([0x01, 0x01, 0x01]); // Make turn at x = 1, y = 1
 
   await reportGameField();
 
-  await makeTurn([0x01, 0x01, 0x02]); // ход в клетку с коорд. 1х2
+  await makeTurn([0x01, 0x01, 0x02]); // Make turn at x = 1, y = 2
 
   await reportGameField();
 
