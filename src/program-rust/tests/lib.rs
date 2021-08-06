@@ -1,5 +1,5 @@
 use borsh::BorshDeserialize;
-use helloworld::{GameCell, GameInstruction, GameState, process_instruction};
+use helloworld::{GameCell, GameInstruction, GameState, GameStatus, process_instruction};
 use solana_program::borsh::get_packed_len as borsh_packed_len;
 use solana_program_test::*;
 use solana_sdk::{
@@ -11,7 +11,7 @@ use solana_sdk::{
 };
 
 #[tokio::test]
-async fn test_helloworld() {
+async fn test_tic_tac_toe() {
     let program_id = Pubkey::new_unique();
     
     let game_account_pubkey = Pubkey::new_unique();
@@ -47,21 +47,30 @@ async fn test_helloworld() {
 
     let (mut banks_client, _, recent_blockhash) = program_test.start().await;
 
-    // Play field is empty
-    let tic_tac_account = banks_client
-        .get_account(game_account_pubkey)
-        .await
-        .expect("get_account")
-        .expect("game_account not found");
+    let game_state = get_game_state(&mut banks_client, game_account_pubkey).await;
+    assert_eq!(game_state.status, GameStatus::Uninitialized);
 
-    assert_eq!(
-        GameState::try_from_slice(&tic_tac_account.data).unwrap().play_field,
-        [
-            GameCell::Empty, GameCell::Empty, GameCell::Empty,
-            GameCell::Empty, GameCell::Empty, GameCell::Empty,
-            GameCell::Empty, GameCell::Empty, GameCell::Empty,
-        ]
+    // Initialize game
+    let mut transaction = Transaction::new_with_payer(
+        &[Instruction::new_with_borsh(
+            program_id,
+            &GameInstruction::GameReset {
+                player_one: player_one.pubkey(),
+                player_two: player_two.pubkey()
+            },
+            vec![
+                AccountMeta::new(game_account_pubkey, false),
+                AccountMeta::new(player_one.pubkey(), true)
+            ],
+        )],
+        Some(&player_one.pubkey()),
     );
+    transaction.sign(&[&player_one], recent_blockhash);
+    banks_client.process_transaction(transaction).await.unwrap();
+
+    let game_state = get_game_state(&mut banks_client, game_account_pubkey).await;
+    assert_eq!(game_state.play_field, [GameCell::Empty; 9]);
+    assert_eq!(game_state.status, GameStatus::PlayerOneTurn);
 
     // Make turn
     let mut transaction = Transaction::new_with_payer(
@@ -78,21 +87,16 @@ async fn test_helloworld() {
     transaction.sign(&[&player_one], recent_blockhash);
     banks_client.process_transaction(transaction).await.unwrap();
 
-    // Verify first player made his turn
-    let game_account = banks_client
-        .get_account(game_account_pubkey)
-        .await
-        .expect("get_account")
-        .expect("game_account not found");
-
+    let game_state = get_game_state(&mut banks_client, game_account_pubkey).await;
     assert_eq!(
-        GameState::try_from_slice(&game_account.data).unwrap().play_field,
+        game_state.play_field,
         [
             GameCell::Tic, GameCell::Empty, GameCell::Empty,
             GameCell::Empty, GameCell::Empty, GameCell::Empty,
             GameCell::Empty, GameCell::Empty, GameCell::Empty,
         ]
     );
+    assert_eq!(game_state.status, GameStatus::PlayerTwoTurn);
 
     // Make second turn
     let mut transaction = Transaction::new_with_payer(
@@ -110,18 +114,24 @@ async fn test_helloworld() {
     banks_client.process_transaction(transaction).await.unwrap();
 
     // Verify second player made his turn
-    let game_account = banks_client
-        .get_account(game_account_pubkey)
-        .await
-        .expect("get_account")
-        .expect("game_account not found");
-
+    let game_state = get_game_state(&mut banks_client, game_account_pubkey).await;
     assert_eq!(
-        GameState::try_from_slice(&game_account.data).unwrap().play_field,
+        game_state.play_field,
         [
             GameCell::Tic, GameCell::Tac, GameCell::Empty,
             GameCell::Empty, GameCell::Empty, GameCell::Empty,
             GameCell::Empty, GameCell::Empty, GameCell::Empty,
         ]
     );
+    assert_eq!(game_state.status, GameStatus::PlayerOneTurn);
+}
+
+async fn get_game_state(client: &mut BanksClient, game_pubkey: Pubkey) -> GameState {
+    let tic_tac_account = client
+        .get_account(game_pubkey)
+        .await
+        .expect("get_account")
+        .expect("game_account not found");
+
+    GameState::try_from_slice(&tic_tac_account.data).unwrap()
 }

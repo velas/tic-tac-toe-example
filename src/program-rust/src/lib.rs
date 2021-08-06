@@ -16,8 +16,8 @@ impl Default for GameCell {
     fn default() -> Self { GameCell::Empty }
 }
 
-#[derive(BorshSchema, BorshSerialize, BorshDeserialize, Debug, PartialEq, Eq)]
-pub enum Turn { PlayerOne, PlayerTwo }
+#[derive(BorshSchema, BorshSerialize, BorshDeserialize, Debug, PartialEq, Eq, Clone, Copy)]
+pub enum GameStatus { Uninitialized, PlayerOneTurn, PlayerTwoTurn, GameEnd }
 
 #[derive(BorshSchema, BorshSerialize, BorshDeserialize, Debug)]
 pub enum GameInstruction {
@@ -35,7 +35,7 @@ pub enum GameInstruction {
 #[derive(BorshSchema, BorshSerialize, BorshDeserialize, Debug)]
 pub struct GameState {
     pub play_field: [GameCell; 9],
-    pub next_turn: Turn,
+    pub status: GameStatus,
     pub player_one: Pubkey,
     pub player_two: Pubkey
 }
@@ -91,16 +91,34 @@ pub fn process_instruction(
             game_state.player_one = player_one;
             game_state.player_two = player_two;
             game_state.play_field = [GameCell::Empty; 9];
+            game_state.status = GameStatus::PlayerOneTurn;
         },
         GameInstruction::MakeTurn { row, col } => {
             if row <= 3 && col <= 3 {
                 let idx = (row * 3 + col) as usize;
-                if game_state.next_turn == Turn::PlayerOne {
-                    game_state.play_field[idx] = GameCell::Tic;
-                    game_state.next_turn = Turn::PlayerTwo;
-                } else {
-                    game_state.play_field[idx] = GameCell::Tac;
-                    game_state.next_turn = Turn::PlayerOne;
+                match (game_state.status, game_state.play_field[idx]) {
+                    (GameStatus::PlayerOneTurn, GameCell::Empty) => {
+                        if player_account.key == &game_state.player_one {
+                            game_state.play_field[idx] = GameCell::Tic;
+                            game_state.status = GameStatus::PlayerTwoTurn;
+                        } else {
+                            msg!("You are not a player of this game")
+                        }
+                    },
+                    (GameStatus::PlayerTwoTurn, GameCell::Empty) => {
+                        if player_account.key == &game_state.player_two {
+                            game_state.play_field[idx] = GameCell::Tac;
+                            game_state.status = GameStatus::PlayerOneTurn;
+                        } else {
+                            msg!("You are not a player of this game")
+                        }
+                    },
+                    (GameStatus::PlayerOneTurn, _) | (GameStatus::PlayerTwoTurn, _) => {
+                        msg!("This cell is not empty")
+                    },
+                    _ => {
+                        msg!("Making turn is not allowed, initialize game first")
+                    }
                 }
             }
         }
