@@ -230,10 +230,32 @@ export async function checkProgram(): Promise<void> {
   }
 }
 
+export async function gameInit(): Promise<any> {
+  console.log('Initializing game field');
+  let secondPlayer = Keypair.generate();
+  const instruction = new TransactionInstruction({
+    keys: [
+      {pubkey: gamePubkey, isSigner: false, isWritable: true},
+      {pubkey: payer.publicKey, isSigner: true, isWritable: true},
+    ],
+    programId,
+    // fixme: Set proper key of second player!
+    data: Buffer.from([0x00, ...payer.publicKey.toBytes(), ...secondPlayer.publicKey.toBytes()]),
+  });
+  await sendAndConfirmTransaction(
+    connection,
+    new Transaction().add(instruction),
+    [payer],
+  );
+}
+
 export async function makeTurn(instruction_data: number[]): Promise<void> {
   console.log('Making turn...', gamePubkey.toBase58());
   const instruction = new TransactionInstruction({
-    keys: [{pubkey: gamePubkey, isSigner: false, isWritable: true}],
+    keys: [
+      {pubkey: gamePubkey, isSigner: false, isWritable: true},
+      {pubkey: payer.publicKey, isSigner: true, isWritable: true}
+    ],
     programId,
     data: Buffer.from(instruction_data),
   });
@@ -247,7 +269,7 @@ export async function makeTurn(instruction_data: number[]): Promise<void> {
 /**
  * Show status of the game field
  */
-export async function reportGame(): Promise<void> {
+export async function reportPlayField(): Promise<void> {
   const accountInfo = await connection.getAccountInfo(gamePubkey);
   if (accountInfo === null) {
     throw 'Error: cannot find the game account';

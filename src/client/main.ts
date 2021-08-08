@@ -6,8 +6,9 @@ import {
   establishConnection,
   establishPayer,
   checkProgram,
-  makeTurn as makeTurn,
-  reportGame as reportGameField,
+  gameInit,
+  makeTurn,
+  reportPlayField,
 } from './hello_world';
 
 async function main() {
@@ -22,16 +23,19 @@ async function main() {
   // Check if the program has been deployed
   await checkProgram();
 
+  // Reset play field and fill internal state with pubkeys of players authorized to play
+  await gameInit();
+
   // Make turn
   await makeTurn([0x00]); // game initialization
 
   await makeTurn([0x01, 0x01, 0x01]); // Make turn at x = 1, y = 1
 
-  await reportGameField();
+  await reportPlayField();
 
   await makeTurn([0x01, 0x01, 0x02]); // Make turn at x = 1, y = 2
 
-  await reportGameField();
+  await reportPlayField();
 
   console.log('Success');
 }
