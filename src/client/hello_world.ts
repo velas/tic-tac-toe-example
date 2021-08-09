@@ -23,26 +23,6 @@ import {
 } from './utils';
 
 /**
- * Connection to the network
- */
-let connection: Connection;
-
-/**
- * Keypair associated to the fees' payer
- */
-let payer: Keypair;
-
-/**
- * Hello world's program id
- */
-let programId: PublicKey;
-
-/**
- * The public key of the account we are saying hello to
- */
-let gamePubkey: PublicKey;
-
-/**
  * Path to program files
  */
 const PROGRAM_PATH = path.resolve(__dirname, '../../dist/program');
@@ -57,7 +37,7 @@ const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'helloworld.so');
 
 /**
  * Path to the keypair of the deployed program.
- * This file is created when running `solana program deploy dist/program/helloworld.so`
+ * This file is created when running `velas program deploy dist/program/helloworld.so`
  */
 const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'helloworld-keypair.json');
 
@@ -65,17 +45,17 @@ const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'helloworld-keypair.json');
  * The state of a game account managed by the tic-tac-toe program
  */
 class GameState {
-  play_field = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  status = 0;
-  player_one = PublicKey.default;
-  player_two = PublicKey.default;
+  play_field = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+  status = 0
+  player_one = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  player_two = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
   constructor(
     fields: {
       play_field: number[],
       status: number,
-      player_one: PublicKey,
-      player_two: PublicKey
+      player_one: number[],
+      player_two: number[]
     } | undefined = undefined
   ) {
     if (fields) {
@@ -92,7 +72,7 @@ class GameState {
  */
 const GameSchema = new Map([
   [
-    GameState, 
+    GameState,
     {
       kind: 'struct',
       fields: [
@@ -116,34 +96,35 @@ const GAME_STATE_SIZE = borsh.serialize(
 /**
  * Establish a connection to the cluster
  */
-export async function establishConnection(): Promise<void> {
+export async function establishConnection(): Promise<Connection> {
   const rpcUrl = await getRpcUrl();
-  connection = new Connection(rpcUrl, 'confirmed');
+  const connection = new Connection(rpcUrl, 'confirmed');
   const version = await connection.getVersion();
   console.log('Connection to cluster established:', rpcUrl, version);
+  return connection;
 }
 
 /**
  * Establish an account to pay for everything
  */
-export async function establishPayer(): Promise<void> {
+export async function establishPayer(connection: Connection): Promise<Keypair> {
   let fees = 0;
-  if (!payer) {
-    const {feeCalculator} = await connection.getRecentBlockhash();
+  const {feeCalculator} = await connection.getRecentBlockhash();
 
-    // Calculate the cost to fund the game account
-    fees += await connection.getMinimumBalanceForRentExemption(GAME_STATE_SIZE);
+  // Calculate the cost to fund the game account
+  fees += await connection.getMinimumBalanceForRentExemption(GAME_STATE_SIZE);
 
-    // Calculate the cost of sending transactions
-    fees += feeCalculator.lamportsPerSignature * 100; // wag
+  // Calculate the cost of sending transactions
+  fees += feeCalculator.lamportsPerSignature * 100; // wag
 
-    try {
-      // Get payer from cli config
-      payer = await getPayer();
-    } catch (err) {
-      // Fund a new payer via airdrop
-      payer = await newAccountWithLamports(connection, fees);
-    }
+  let payer;
+
+  try {
+    // Get payer from cli config
+    payer = await getPayer();
+  } catch (err) {
+    // Fund a new payer via airdrop
+    payer = await newAccountWithLamports(connection, fees);
   }
 
   const lamports = await connection.getBalance(payer.publicKey);
@@ -163,20 +144,23 @@ export async function establishPayer(): Promise<void> {
     lamports / LAMPORTS_PER_SOL,
     'SOL to pay for fees',
   );
+
+  return payer;
 }
 
 /**
  * Check if the hello world BPF program has been deployed
  */
-export async function checkProgram(): Promise<void> {
+export async function checkProgram(connection: Connection, payer: Keypair): Promise<{ programId: PublicKey, gamePubkey: PublicKey}> {
   // Read program id from keypair file
+  let programId: PublicKey;
   try {
     const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
     programId = programKeypair.publicKey;
   } catch (err) {
     const errMsg = (err as Error).message;
     throw new Error(
-      `Failed to read program keypair at '${PROGRAM_KEYPAIR_PATH}' due to error: ${errMsg}. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``,
+      `Failed to read program keypair at '${PROGRAM_KEYPAIR_PATH}' due to error: ${errMsg}. Program may need to be deployed with \`velas program deploy dist/program/helloworld.so\``,
     );
   }
 
@@ -185,7 +169,7 @@ export async function checkProgram(): Promise<void> {
   if (programInfo === null) {
     if (fs.existsSync(PROGRAM_SO_PATH)) {
       throw new Error(
-        'Program needs to be deployed with `solana program deploy dist/program/helloworld.so`',
+        'Program needs to be deployed with `velas program deploy dist/program/helloworld.so`',
       );
     } else {
       throw new Error('Program needs to be built and deployed');
@@ -195,9 +179,10 @@ export async function checkProgram(): Promise<void> {
   }
   console.log(`Using program ${programId.toBase58()}`);
 
-  // Derive the address (public key) of a game account from the program so that it's easy to find later.
+  // Derive the address (public key) of a game account
+  // from the program so that it's easy to find later.
   const GAME_SEED = 'hello';
-  gamePubkey = await PublicKey.createWithSeed(
+  const gamePubkey = await PublicKey.createWithSeed(
     payer.publicKey,
     GAME_SEED,
     programId,
@@ -228,9 +213,16 @@ export async function checkProgram(): Promise<void> {
     );
     await sendAndConfirmTransaction(connection, transaction, [payer]);
   }
+
+  return {programId, gamePubkey };
 }
 
-export async function gameInit(): Promise<any> {
+export async function gameReset(
+  connection: Connection,
+  programId: PublicKey,
+  gamePubkey: PublicKey,
+  payer: Keypair
+): Promise<any> {
   console.log('Initializing game field');
   let secondPlayer = Keypair.generate();
   const instruction = new TransactionInstruction({
@@ -240,7 +232,9 @@ export async function gameInit(): Promise<any> {
     ],
     programId,
     // fixme: Set proper key of second player!
-    data: Buffer.from([0x00, ...payer.publicKey.toBytes(), ...secondPlayer.publicKey.toBytes()]),
+    data: Buffer.from(
+      [0x00, ...payer.publicKey.toBytes(), ...secondPlayer.publicKey.toBytes()]
+    ),
   });
   await sendAndConfirmTransaction(
     connection,
@@ -249,7 +243,13 @@ export async function gameInit(): Promise<any> {
   );
 }
 
-export async function makeTurn(instruction_data: number[]): Promise<void> {
+export async function makeTurn(
+  connection: Connection,
+  programId: PublicKey,
+  gamePubkey: PublicKey,
+  payer: Keypair,
+  instruction_data: number[]
+): Promise<void> {
   console.log('Making turn...', gamePubkey.toBase58());
   const instruction = new TransactionInstruction({
     keys: [
@@ -269,7 +269,10 @@ export async function makeTurn(instruction_data: number[]): Promise<void> {
 /**
  * Show status of the game field
  */
-export async function reportPlayField(): Promise<void> {
+export async function reportPlayField(
+  connection: Connection,
+  gamePubkey: PublicKey
+): Promise<GameState> {
   const accountInfo = await connection.getAccountInfo(gamePubkey);
   if (accountInfo === null) {
     throw 'Error: cannot find the game account';
@@ -281,6 +284,11 @@ export async function reportPlayField(): Promise<void> {
     accountInfo.data,
   );
 
+  return gameState;
+}
+
+export function printGameState(gameState: GameState) {
+  console.log('game field:')
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
       let fieldContent = gameState.play_field[row * 3 + col];
@@ -295,4 +303,8 @@ export async function reportPlayField(): Promise<void> {
     }
     process.stdout.write('\n')
   }
+
+  console.log('player_one: ' + gameState.player_one)
+  console.log('player two: ' + gameState.player_two)
+  console.log('status: ' + gameState.status)
 }

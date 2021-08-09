@@ -1,17 +1,17 @@
 {
-  "name": "helloworld",
+  "name": "tic-tac-toe-example",
   "version": "0.0.1",
   "description": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/solana-labs/example-helloworld"
+    "url": "https://github.com/velas/tic-tac-toe-example"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "scripts": {
     "start": "ts-node src/client/main.ts",
-    "start-with-test-validator": "start-server-and-test 'solana-test-validator --reset --quiet' http://localhost:8899/health start",
+    "start-with-test-validator": "start-server-and-test 'velas-test-validator --reset --quiet' http://localhost:8899/health start",
     "lint": "eslint --ext .ts src/client/* && prettier --check \"src/client/**/*.ts\"",
     "lint:fix": "eslint --ext .ts src/client/* --fix && prettier --write \"src/client/**/*.ts\"",
     "clean": "npm run clean:program-c && npm run clean:program-rust",
@@ -24,7 +24,8 @@
   },
   "dependencies": {
     "@solana/web3.js": "^1.7.0",
-    "borsh": "^0.4.0",
+    "commander": "^8.1.0",
+    "borsh": "^0.5.0",
     "mz": "^2.7.0",
     "yaml": "^1.10.2"
   },

@@ -1,49 +1,118 @@
 /**
- * Hello world
+ * Tic-tac-toe
  */
+
+import { program } from 'commander'
 
 import {
   establishConnection,
   establishPayer,
   checkProgram,
-  gameInit,
+  gameReset,
   makeTurn,
   reportPlayField,
-} from './hello_world';
+  printGameState
+} from './hello_world'
 
 async function main() {
-  console.log("Let's say hello to a Velas account...");
+  program
+    .command('show-key')
+    .argument('[path]', "optional path to file with player's keypair to sign transaction, or using default path from velas config")
+    .description('show the public key of player')
+    .action(runShowKey)
+
+  program
+    .command('game-state')
+    .argument('[path]', "optional path to file with player's keypair to sign transaction, or using default path from velas config")
+    .description('show state of game field')
+    .action(runShowState)
+
+  program
+    .command('game-reset')
+    .argument('<second_player>', "opponent's pubkey you decided to play with")
+    .argument('[path]', "optional path to file with player's keypair to sign transaction, or using default path from velas config")
+    .description('reset play field and pubkeys of players')
+    .action(runResetGame)
+
+  program
+    .command('make-turn')
+    .argument('<row>', '`x` coordinate, starting from top-left corner (0, 1 or 2)')
+    .argument('<column>', '`y` coordinate, starting from top-left corner (0, 1 or 2)')
+    .argument('[path]', "optional path to file with player's keypair to sign transaction, or using default path from velas config")
+    .description('make turn at specified coordinates')
+    .action(runMakeTurn)
+
+  await program.parseAsync()
+
+  console.log('Success')
+}
+
+async function runShowKey(path: string) {
+  if (path) {
+    console.log(path)
+  } else {
+    console.log('using default config path')
+  }
+}
+
+async function runShowState() {
+  console.log('Showing game state')
 
   // Establish connection to the cluster
-  await establishConnection();
+  const connection = await establishConnection()
 
   // Determine who pays for the fees
-  await establishPayer();
+  const payer = await establishPayer(connection)
 
   // Check if the program has been deployed
-  await checkProgram();
+  let { programId, gamePubkey } = await checkProgram(connection, payer)
+
+  let gameState = await reportPlayField(connection, gamePubkey)
+  printGameState(gameState)
+}
+
+async function runResetGame(path: string) {
+  if (path) {console.log('yes path')} else {console.log('no path')}
+
+  // Establish connection to the cluster
+  const connection = await establishConnection()
+
+  // Determine who pays for the fees
+  const payer = await establishPayer(connection)
+
+  // Check if the program has been deployed
+  let { programId, gamePubkey } = await checkProgram(connection, payer)
 
   // Reset play field and fill internal state with pubkeys of players authorized to play
-  await gameInit();
+  await gameReset(connection, programId, gamePubkey, payer)
+}
 
-  // Make turn
-  await makeTurn([0x00]); // game initialization
+async function runMakeTurn(row: number, column: number, path: string) {
+  console.log('making turn')
+  console.log('row: ' + row)
+  console.log('column: ' + column)
+  console.log('path: ' + path)
 
-  await makeTurn([0x01, 0x01, 0x01]); // Make turn at x = 1, y = 1
+  // Establish connection to the cluster
+  const connection = await establishConnection()
 
-  await reportPlayField();
+  // Determine who pays for the fees
+  const payer = await establishPayer(connection)
 
-  await makeTurn([0x01, 0x01, 0x02]); // Make turn at x = 1, y = 2
+  // Check if the program has been deployed
+  let { programId, gamePubkey } = await checkProgram(connection, payer)
 
-  await reportPlayField();
+  // Make turn at specified coordinates
+  await makeTurn(connection, programId, gamePubkey, payer, [0x01, row, column])
 
-  console.log('Success');
+  let gameState = await reportPlayField(connection, gamePubkey)
+  printGameState(gameState)
 }
 
 main().then(
   () => process.exit(),
   err => {
-    console.error(err);
-    process.exit(-1);
+    console.error(err)
+    process.exit(-1)
   },
 );

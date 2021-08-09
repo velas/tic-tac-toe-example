@@ -76,7 +76,7 @@ entrypoint!(process_instruction);
 pub fn process_instruction(
     program_id: &Pubkey, // Public key of the account the hello world program was loaded into
     accounts: &[AccountInfo], // Accounts of the game and player
-    instruction_data: &[u8], // Ignored, all helloworld instructions are hellos
+    instruction_data: &[u8], // Serialized `GameInstruction`
 ) -> ProgramResult {
     msg!("Tic-tac-toe game program entrypoint");
 
@@ -85,6 +85,8 @@ pub fn process_instruction(
 
     // Get the account to say hello to
     let game_account = next_account_info(accounts_iter)?;
+
+    // TODO: check if acc is a signer
     let player_account = next_account_info(accounts_iter)?;
 
     // The account must be owned by the program in order to modify its data
@@ -95,7 +97,7 @@ pub fn process_instruction(
 
     // Increment and store the number of times the account has been greeted
     let mut game_state = GameState::try_from_slice(&game_account.data.borrow())?;
-    
+
     // Deserializing instruction into typed variable using `borsh` lib
     let instruction = GameInstruction::try_from_slice(instruction_data)?;
 
@@ -105,7 +107,7 @@ pub fn process_instruction(
     // Check if game has ended
     check_game_end(&mut game_state)?;
 
-    // 
+    // Save updated state
     game_state.serialize(&mut &mut game_account.data.borrow_mut()[..])?;
 
     Ok(())
@@ -119,6 +121,7 @@ fn apply_instruction(
 {
     match instruction {
         GameInstruction::GameReset { player_one, player_two } => {
+            // TODO: Check that game in not playable state, or both players are signers.
             game.player_one = player_one;
             game.player_two = player_two;
             game.play_field = [GameCell::Empty; 9];
@@ -163,7 +166,7 @@ fn apply_instruction(
 }
 
 fn check_game_end(game: &mut GameState) -> ProgramResult {
-    for coord in WIN_CONDITIONS {
+    for coord in WIN_CONDITIONS.iter() {
         let x = game.play_field[coord[0]];
         let y = game.play_field[coord[1]];
         let z = game.play_field[coord[2]];

@@ -13,7 +13,7 @@ use solana_sdk::{
 #[tokio::test]
 async fn test_tic_tac_toe() {
     let program_id = Pubkey::new_unique();
-    
+
     let game_account_pubkey = Pubkey::new_unique();
 
     let mut program_test = ProgramTest::new(
