@@ -12,7 +12,7 @@ import {
   makeTurn,
   reportPlayField,
   printGameState
-} from './hello_world'
+} from './tic_tac_toe'
 
 async function main() {
   program
