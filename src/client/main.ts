@@ -2,6 +2,7 @@
  * Tic-tac-toe
  */
 
+import { PublicKey } from '@solana/web3.js'
 import { program } from 'commander'
 
 import {
@@ -13,6 +14,8 @@ import {
   reportPlayField,
   printGameState
 } from './tic_tac_toe'
+
+import { getPayer } from './utils'
 
 async function main() {
   program
@@ -29,10 +32,10 @@ async function main() {
 
   program
     .command('game-reset')
-    .argument('<second_player>', "opponent's pubkey you decided to play with")
+    .argument('<second_player>', "base58 encoded pubkey of the opponent you decided to play with")
     .argument('[path]', "optional path to file with player's keypair to sign transaction, or using default path from velas config")
     .description('reset play field and pubkeys of players')
-    .action(runResetGame)
+    .action(runGameReset)
 
   program
     .command('make-turn')
@@ -47,12 +50,9 @@ async function main() {
   console.log('Success')
 }
 
-async function runShowKey(path: string) {
-  if (path) {
-    console.log(path)
-  } else {
-    console.log('using default config path')
-  }
+async function runShowKey(path: string | undefined) {
+  let player = await getPayer(path)
+  console.log(`Pubkey of player: ${player.publicKey.toBase58()}`)
 }
 
 async function runShowState() {
@@ -65,39 +65,35 @@ async function runShowState() {
   const payer = await establishPayer(connection)
 
   // Check if the program has been deployed
-  let { programId, gamePubkey } = await checkProgram(connection, payer)
+  let { gamePubkey } = await checkProgram(connection, payer)
 
   let gameState = await reportPlayField(connection, gamePubkey)
+
   printGameState(gameState)
 }
 
-async function runResetGame(path: string) {
-  if (path) {console.log('yes path')} else {console.log('no path')}
+async function runGameReset(secondPlayer: string, filePath: string | undefined) {
+  let secondPlayerPubkey = new PublicKey(secondPlayer)
 
   // Establish connection to the cluster
   const connection = await establishConnection()
 
   // Determine who pays for the fees
-  const payer = await establishPayer(connection)
+  const payer = await establishPayer(connection, filePath)
 
   // Check if the program has been deployed
   let { programId, gamePubkey } = await checkProgram(connection, payer)
 
   // Reset play field and fill internal state with pubkeys of players authorized to play
-  await gameReset(connection, programId, gamePubkey, payer)
+  await gameReset(connection, programId, gamePubkey, secondPlayerPubkey, payer)
 }
 
-async function runMakeTurn(row: number, column: number, path: string) {
-  console.log('making turn')
-  console.log('row: ' + row)
-  console.log('column: ' + column)
-  console.log('path: ' + path)
-
+async function runMakeTurn(row: number, column: number, filePath: string) {
   // Establish connection to the cluster
   const connection = await establishConnection()
 
   // Determine who pays for the fees
-  const payer = await establishPayer(connection)
+  const payer = await establishPayer(connection, filePath)
 
   // Check if the program has been deployed
   let { programId, gamePubkey } = await checkProgram(connection, payer)
@@ -106,6 +102,7 @@ async function runMakeTurn(row: number, column: number, path: string) {
   await makeTurn(connection, programId, gamePubkey, payer, [0x01, row, column])
 
   let gameState = await reportPlayField(connection, gamePubkey)
+
   printGameState(gameState)
 }
 

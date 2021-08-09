@@ -54,13 +54,18 @@ export async function getRpcUrl(): Promise<string> {
 }
 
 /**
- * Load and parse the Solana CLI config file to determine which payer to use
+ * Load and parse keypair of payer
+ * @param {string} [filePath] - Path to a file with Velas account keypair.
+ * Takes default value from Velas CLI config file if argument is not specified.
  */
-export async function getPayer(): Promise<Keypair> {
+export async function getPayer(filePath: string | undefined = undefined): Promise<Keypair> {
   try {
-    const config = await getConfig()
-    if (!config.keypair_path) throw new Error('Missing keypair path')
-    return createKeypairFromFile(config.keypair_path)
+    if (!filePath) {
+      const config = await getConfig()
+      if (!config.keypair_path) throw new Error('Missing keypair path')
+      filePath = config.keypair_path as string
+    }
+    return createKeypairFromFile(filePath)
   } catch (err) {
     console.warn(
       'Failed to create keypair from CLI config file, falling back to new random keypair',

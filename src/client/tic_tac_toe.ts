@@ -106,8 +106,15 @@ export async function establishConnection(): Promise<Connection> {
 
 /**
  * Establish an account to pay for everything
+ * @param {Connection} connection - Established connection to the cluster
+ * @param {string} [filePath] - Path to a file with Velas account keypair.
+ * Takes default value from Velas CLI config file if argument is not specified.
  */
-export async function establishPayer(connection: Connection): Promise<Keypair> {
+export async function establishPayer(
+  connection: Connection,
+  filePath: string | undefined = undefined
+): Promise<Keypair>
+{
   let fees = 0
   const {feeCalculator} = await connection.getRecentBlockhash()
 
@@ -120,8 +127,7 @@ export async function establishPayer(connection: Connection): Promise<Keypair> {
   let payer
 
   try {
-    // Get payer from cli config
-    payer = await getPayer()
+    payer = await getPayer(filePath)
   } catch (err) {
     // Fund a new payer via airdrop
     payer = await newAccountWithLamports(connection, fees)
@@ -151,7 +157,11 @@ export async function establishPayer(connection: Connection): Promise<Keypair> {
 /**
  * Check if the hello world BPF program has been deployed
  */
-export async function checkProgram(connection: Connection, payer: Keypair): Promise<{ programId: PublicKey, gamePubkey: PublicKey}> {
+export async function checkProgram(
+  connection: Connection,
+  payer: Keypair
+): Promise<{ programId: PublicKey, gamePubkey: PublicKey}>
+{
   // Read program id from keypair file
   let programId: PublicKey
   try {
@@ -222,19 +232,19 @@ export async function gameReset(
   connection: Connection,
   programId: PublicKey,
   gamePubkey: PublicKey,
+  secondPlayer: PublicKey,
   payer: Keypair
-): Promise<any>{
+): Promise<any>
+{
   console.log('Initializing game field')
-  let secondPlayer = Keypair.generate()
   const instruction = new TransactionInstruction({
     keys: [
       {pubkey: gamePubkey, isSigner: false, isWritable: true},
       {pubkey: payer.publicKey, isSigner: true, isWritable: true},
     ],
     programId,
-    // fixme: Set proper key of second player!
     data: Buffer.from(
-      [0x00, ...payer.publicKey.toBytes(), ...secondPlayer.publicKey.toBytes()]
+      [0x00, ...payer.publicKey.toBytes(), ...secondPlayer.toBytes()]
     ),
   })
   await sendAndConfirmTransaction(
@@ -250,8 +260,9 @@ export async function makeTurn(
   gamePubkey: PublicKey,
   payer: Keypair,
   instruction_data: number[]
-): Promise<void> {
-  console.log('Making turn...', gamePubkey.toBase58())
+): Promise<void>
+{
+  console.log(`Player ${payer.publicKey} is making a move...`)
   const instruction = new TransactionInstruction({
     keys: [
       {pubkey: gamePubkey, isSigner: false, isWritable: true},
@@ -273,7 +284,8 @@ export async function makeTurn(
 export async function reportPlayField(
   connection: Connection,
   gamePubkey: PublicKey
-): Promise<GameState> {
+): Promise<GameState>
+{
   const accountInfo = await connection.getAccountInfo(gamePubkey)
   if (accountInfo === null) {
     throw 'Error: cannot find the game account'
@@ -306,6 +318,6 @@ export function printGameState(gameState: GameState) {
   }
 
   console.log('player_one: ' + gameState.player_one)
-  console.log('player two: ' + gameState.player_two)
+  console.log('player_two: ' + gameState.player_two)
   console.log('status: ' + gameState.status)
 }
