@@ -20,56 +20,41 @@ import { getPayer } from './utils'
 async function main() {
   program
     .command('show-key')
-    .argument('[path]', "optional path to file with player's keypair to sign transaction, or using default path from velas config")
+    .argument('[file_path]', "optional path to file with player's keypair used to sign transaction, or using default path from velas config file")
     .description('show the public key of player')
     .action(runShowKey)
 
   program
-    .command('game-state')
-    .argument('[path]', "optional path to file with player's keypair to sign transaction, or using default path from velas config")
-    .description('show state of game field')
-    .action(runShowState)
-
-  program
     .command('game-reset')
     .argument('<second_player>', "base58 encoded pubkey of the opponent you decided to play with")
-    .argument('[path]', "optional path to file with player's keypair to sign transaction, or using default path from velas config")
+    .argument('[file_path]', "optional path to file with player's keypair used to sign transaction, or using default path from velas config file")
     .description('reset play field and pubkeys of players')
     .action(runGameReset)
 
   program
+    .command('game-state')
+    .argument('<game_account>', 'account containing game state')
+    .argument('[file_path]', "optional path to file with player's keypair used to sign transaction, or using default path from velas config file")
+    .description('show state of game field')
+    .action(runGameState)
+
+  program
     .command('make-turn')
+    .argument('<game_account>', 'account containing game state')
     .argument('<row>', '`x` coordinate, starting from top-left corner (0, 1 or 2)')
     .argument('<column>', '`y` coordinate, starting from top-left corner (0, 1 or 2)')
-    .argument('[path]', "optional path to file with player's keypair to sign transaction, or using default path from velas config")
+    .argument('[file_path]', "optional path to file with player's keypair used to sign transaction, or using default path from velas config file")
     .description('make turn at specified coordinates')
     .action(runMakeTurn)
 
   await program.parseAsync()
 
-  console.log('Success')
+  // console.log('Success')
 }
 
 async function runShowKey(path: string | undefined) {
   let player = await getPayer(path)
-  console.log(`Pubkey of player: ${player.publicKey.toBase58()}`)
-}
-
-async function runShowState() {
-  console.log('Showing game state')
-
-  // Establish connection to the cluster
-  const connection = await establishConnection()
-
-  // Determine who pays for the fees
-  const payer = await establishPayer(connection)
-
-  // Check if the program has been deployed
-  let { gamePubkey } = await checkProgram(connection, payer)
-
-  let gameState = await reportPlayField(connection, gamePubkey)
-
-  printGameState(gameState)
+  console.log(`Game account: ${player.publicKey.toBase58()}. Share it with with your opponent`)
 }
 
 async function runGameReset(secondPlayer: string, filePath: string | undefined) {
@@ -86,9 +71,11 @@ async function runGameReset(secondPlayer: string, filePath: string | undefined) 
 
   // Reset play field and fill internal state with pubkeys of players authorized to play
   await gameReset(connection, programId, gamePubkey, secondPlayerPubkey, payer)
+
+  console.log(`game's state pubkey: ${gamePubkey}`)
 }
 
-async function runMakeTurn(row: number, column: number, filePath: string) {
+async function runGameState(gameAccount: string, filePath: string | undefined) {
   // Establish connection to the cluster
   const connection = await establishConnection()
 
@@ -96,7 +83,26 @@ async function runMakeTurn(row: number, column: number, filePath: string) {
   const payer = await establishPayer(connection, filePath)
 
   // Check if the program has been deployed
-  let { programId, gamePubkey } = await checkProgram(connection, payer)
+  let { gamePubkey } = await checkProgram(connection, payer)
+
+  let gameState = await reportPlayField(connection, gamePubkey)
+
+  printGameState(gameState)
+}
+
+async function runMakeTurn(gameAccount: string, row: number, column: number, filePath: string) {
+  // Establish connection to the cluster
+  const connection = await establishConnection()
+
+  // Determine who pays for the fees
+  const payer = await establishPayer(connection, filePath)
+
+  // Check if the program has been deployed
+  let { programId } = await checkProgram(connection, payer)
+
+  let gamePubkey = new PublicKey(gameAccount)
+
+  console.log(`player "${payer.publicKey}" is making a move...`)
 
   // Make turn at specified coordinates
   await makeTurn(connection, programId, gamePubkey, payer, [0x01, row, column])

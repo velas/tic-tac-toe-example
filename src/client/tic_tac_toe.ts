@@ -148,7 +148,7 @@ export async function establishPayer(
     payer.publicKey.toBase58(),
     'containing',
     lamports / LAMPORTS_PER_SOL,
-    'SOL to pay for fees',
+    'VLX to pay for fees',
   )
 
   return payer
@@ -225,7 +225,7 @@ export async function checkProgram(
     await sendAndConfirmTransaction(connection, transaction, [payer])
   }
 
-  return {programId, gamePubkey }
+  return { programId, gamePubkey }
 }
 
 export async function gameReset(
@@ -236,11 +236,10 @@ export async function gameReset(
   payer: Keypair
 ): Promise<any>
 {
-  console.log('Initializing game field')
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: gamePubkey, isSigner: false, isWritable: true},
-      {pubkey: payer.publicKey, isSigner: true, isWritable: true},
+      { pubkey: gamePubkey, isSigner: false, isWritable: true },
+      { pubkey: payer.publicKey, isSigner: true, isWritable: true },
     ],
     programId,
     data: Buffer.from(
@@ -259,17 +258,16 @@ export async function makeTurn(
   programId: PublicKey,
   gamePubkey: PublicKey,
   payer: Keypair,
-  instruction_data: number[]
+  instructionData: number[]
 ): Promise<void>
 {
-  console.log(`Player ${payer.publicKey} is making a move...`)
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: gamePubkey, isSigner: false, isWritable: true},
-      {pubkey: payer.publicKey, isSigner: true, isWritable: true}
+      { pubkey: gamePubkey, isSigner: false, isWritable: true },
+      { pubkey: payer.publicKey, isSigner: true, isWritable: true }
     ],
     programId,
-    data: Buffer.from(instruction_data),
+    data: Buffer.from(instructionData),
   })
   await sendAndConfirmTransaction(
     connection,
