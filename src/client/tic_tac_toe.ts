@@ -41,14 +41,15 @@ const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'helloworld.so')
  */
 const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'helloworld-keypair.json')
 
+enum GameStatus { Undefined, PlayerOneTurn, PlayerTwoTurn, GameEnd }
 /**
  * The state of a game account managed by the tic-tac-toe program
  */
 class GameState {
   play_field = [0, 0, 0, 0, 0, 0, 0, 0, 0]
   status = 0
-  player_one = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-  player_two = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  private player_one = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  private player_two = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
   constructor(
     fields: {
@@ -65,6 +66,9 @@ class GameState {
       this.player_two = fields.player_two
     }
   }
+
+  playerOnePubkey() { return new PublicKey(this.player_one) }
+  playerTwoPubkey() { return new PublicKey(this.player_two) }
 }
 
 /**
@@ -315,7 +319,7 @@ export function printGameState(gameState: GameState) {
     process.stdout.write('\n')
   }
 
-  console.log('player_one: ' + gameState.player_one)
-  console.log('player_two: ' + gameState.player_two)
-  console.log('status: ' + gameState.status)
+  console.log('Player one: ' + gameState.playerOnePubkey())
+  console.log('Player two: ' + gameState.playerTwoPubkey())
+  console.log('status: ' + GameStatus[gameState.status])
 }

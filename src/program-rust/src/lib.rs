@@ -86,8 +86,11 @@ pub fn process_instruction(
     // Get the account to say hello to
     let game_account = next_account_info(accounts_iter)?;
 
-    // TODO: check if acc is a signer
     let player_account = next_account_info(accounts_iter)?;
+    if !player_account.is_signer {
+        msg!("Player is not a signer");
+        return Err(ProgramError::MissingRequiredSignature);
+    }
 
     // The account must be owned by the program in order to modify its data
     if game_account.owner != program_id {
@@ -121,11 +124,16 @@ fn apply_instruction(
 {
     match instruction {
         GameInstruction::GameReset { player_one, player_two } => {
-            // TODO: Check that game in not playable state, or both players are signers.
-            game.player_one = player_one;
-            game.player_two = player_two;
-            game.play_field = [GameCell::Empty; 9];
-            game.status = GameStatus::PlayerOneTurn;
+            // TODO: or if both players are signers
+            if game.status == GameStatus::GameEnd || game.status == GameStatus::Uninitialized {
+                game.player_one = player_one;
+                game.player_two = player_two;
+                game.play_field = [GameCell::Empty; 9];
+                game.status = GameStatus::PlayerOneTurn;
+            } else {
+                msg!("You can't reset an in-progress game");
+                return Err(ProgramError::InvalidInstructionData);
+            }
         },
         GameInstruction::MakeTurn { row, col } => {
             if row <= 3 && col <= 3 {
@@ -195,7 +203,7 @@ mod test {
         let owner = Pubkey::default();
         let account = AccountInfo::new(
             &key,
-            false,
+            true,
             true,
             &mut lamports,
             &mut data,
@@ -207,13 +215,20 @@ mod test {
 
         let accounts = vec![account, player];
 
+        let game_reset = GameInstruction::GameReset {
+            player_one: Pubkey::default(),
+            player_two: Pubkey::default()
+        }.try_to_vec().unwrap();
+
         let make_turn_1 = GameInstruction::MakeTurn { col: 0, row: 0}.try_to_vec().unwrap();
         let make_turn_2 = GameInstruction::MakeTurn { col: 1, row: 1}.try_to_vec().unwrap();
-        // let game_reset = GameInstruction::GameReset {}.try_to_vec().unwrap();
 
         assert_eq!(make_turn_1, [0x01, 0x00, 0x00]);
         assert_eq!(make_turn_2, [0x01, 0x01, 0x01]);
-        // assert_eq!(game_reset, [0x00]);
+
+        process_instruction(&program_id, &accounts, &game_reset).unwrap();
+        let account = GameState::try_from_slice(&accounts[0].data.borrow()).unwrap();
+        println!("{}", &account.pretty_print());
 
         process_instruction(&program_id, &accounts, &make_turn_1).unwrap();
         let account = GameState::try_from_slice(&accounts[0].data.borrow()).unwrap();
@@ -222,9 +237,5 @@ mod test {
         process_instruction(&program_id, &accounts, &make_turn_2).unwrap();
         let account = GameState::try_from_slice(&accounts[0].data.borrow()).unwrap();
         println!("{}", &account.pretty_print());
-
-        // process_instruction(&program_id, &accounts, &game_reset).unwrap();
-        // let account = GameState::try_from_slice(&accounts[0].data.borrow()).unwrap();
-        // println!("{}", &account.pretty_print());
     }
 }
