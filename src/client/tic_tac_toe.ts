@@ -46,10 +46,10 @@ enum GameStatus { Undefined, PlayerOneTurn, PlayerTwoTurn, GameEnd }
  * The state of a game account managed by the tic-tac-toe program
  */
 class GameState {
-  play_field = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+  play_field = new Array(9).fill(0)
   status = 0
-  private player_one = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-  private player_two = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  private player_one = new Array(32).fill(0)
+  private player_two = new Array(32).fill(0)
 
   constructor(
     fields: {
