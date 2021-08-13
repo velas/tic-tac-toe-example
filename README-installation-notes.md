@@ -18,7 +18,7 @@ After installation, you should have `rustc`, `cargo`, & `rustup`. You should
 also have `~/.cargo/bin` in your PATH environment variable.
 
 ### NodeJS/NPM
-Fetch the `npm` dependencies, including `@solana/web3.js`, by running:
+Fetch the `npm` dependencies, by running:
 ```bash
 $ npm install
 ```
