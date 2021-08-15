@@ -48,8 +48,6 @@ async function main() {
     .action(runMakeTurn)
 
   await program.parseAsync()
-
-  // console.log('Success')
 }
 
 async function runShowKey(path: string | undefined) {

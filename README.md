@@ -57,12 +57,12 @@ First you need to initialize new game with following command, signed by first pl
 $ npm start game-reset <second_player> /path/to/keypairs/player1.json
 ```
 
-Replace _<second_player>_ with base58 encoded public key of second player before executing the command above. You can use following command to show base58 encoded pubkey from specified keypair file:
+Replace `<second_player>` with base58 encoded public key of second player before executing the command above. You can use following command to show base58 encoded pubkey from specified keypair file:
 ```bash
 $ npm start show-key /path/to/keypairs/player2.json
 ```
 
-After game initialization take a look at this line at console output (pubkey will be different). Save this public key, we will need to pass it as argument of commands below.
+After game initialization, take a look at this line at console output (pubkey will be different). Save this public key, we will need to pass it as argument of commands below.
 ```
 Creating game account: 65FuAgjgSGKqZs6cWBLvKgqd3oD5DPbwvVhDRf7RZos5
 ```
