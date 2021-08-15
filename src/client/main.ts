@@ -54,7 +54,7 @@ async function main() {
 
 async function runShowKey(path: string | undefined) {
   let player = await getPayer(path)
-  console.log(`Game account: ${player.publicKey.toBase58()}. Share it with with your opponent`)
+  console.log(`Account's pubkey: ${player.publicKey.toBase58()}`)
 }
 
 async function runGameReset(secondPlayer: string, filePath: string | undefined) {

@@ -206,9 +206,8 @@ export async function checkProgram(
   const gameAccount = await connection.getAccountInfo(gamePubkey)
   if (gameAccount === null) {
     console.log(
-      'Creating account',
-      gamePubkey.toBase58(),
-      'to play at',
+      'Creating game account: ',
+      gamePubkey.toBase58()
     )
     const lamports = await connection.getMinimumBalanceForRentExemption(
       GAME_STATE_SIZE,
@@ -303,7 +302,7 @@ export async function reportPlayField(
 }
 
 export function printGameState(gameState: GameState) {
-  console.log('game field:')
+  console.log('Game field:')
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
       let fieldContent = gameState.play_field[row * 3 + col]
@@ -314,12 +313,12 @@ export function printGameState(gameState: GameState) {
       if (fieldContent == 2) {
         drawSign = '0'
       }
-      process.stdout.write(drawSign)
+      process.stdout.write(drawSign + ' ')
     }
     process.stdout.write('\n')
   }
 
   console.log('Player one: ' + gameState.playerOnePubkey())
   console.log('Player two: ' + gameState.playerTwoPubkey())
-  console.log('status: ' + GameStatus[gameState.status])
+  console.log('Status: ' + GameStatus[gameState.status])
 }
