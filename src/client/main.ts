@@ -2,7 +2,7 @@
  * Tic-tac-toe
  */
 
-import { PublicKey } from '@solana/web3.js'
+import { PublicKey } from '@velas/web3'
 import { program } from 'commander'
 
 import {

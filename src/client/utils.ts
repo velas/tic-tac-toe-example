@@ -6,7 +6,7 @@ import os from 'os'
 import fs from 'mz/fs'
 import path from 'path'
 import yaml from 'yaml'
-import { Keypair, Connection } from '@solana/web3.js'
+import { Keypair, Connection } from '@velas/web3'
 
 export async function newAccountWithLamports(
   connection: Connection,
