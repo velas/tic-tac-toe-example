@@ -32,13 +32,13 @@ const PROGRAM_PATH = path.resolve(__dirname, '../../dist/program')
  * This file is created when running either:
  *   - `npm run build:program-rust`
  */
-const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'helloworld.so')
+const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'tic_tac_toe.so')
 
 /**
  * Path to the keypair of the deployed program.
- * This file is created when running `velas program deploy dist/program/helloworld.so`
+ * This file is created when running `velas program deploy dist/program/tic_tac_toe.so`
  */
-const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'helloworld-keypair.json')
+const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'tic_tac_toe-keypair.json')
 
 enum GameStatus { Undefined, PlayerOneTurn, PlayerTwoTurn, GameEnd }
 /**
@@ -173,7 +173,7 @@ export async function checkProgram(
   } catch (err) {
     const errMsg = (err as Error).message
     throw new Error(
-      `Failed to read program keypair at '${PROGRAM_KEYPAIR_PATH}' due to error: ${errMsg}. Program may need to be deployed with \`velas program deploy dist/program/helloworld.so\``,
+      `Failed to read program keypair at '${PROGRAM_KEYPAIR_PATH}' due to error: ${errMsg}. Program may need to be deployed with \`velas program deploy dist/program/tic_tac_toe.so\``,
     )
   }
 
@@ -182,7 +182,7 @@ export async function checkProgram(
   if (programInfo === null) {
     if (fs.existsSync(PROGRAM_SO_PATH)) {
       throw new Error(
-        'Program needs to be deployed with `velas program deploy dist/program/helloworld.so`',
+        'Program needs to be deployed with `velas program deploy dist/program/tic_tac_toe.so`',
       )
     } else {
       throw new Error('Program needs to be built and deployed')

@@ -1,5 +1,5 @@
 use borsh::BorshDeserialize;
-use helloworld::{GameCell, GameInstruction, GameState, GameStatus, process_instruction};
+use tic_tac_toe::{GameCell, GameInstruction, GameState, GameStatus, process_instruction};
 use solana_program::borsh::get_packed_len as borsh_packed_len;
 use solana_program_test::*;
 use solana_sdk::{
@@ -17,7 +17,7 @@ async fn test_tic_tac_toe() {
     let game_account_pubkey = Pubkey::new_unique();
 
     let mut program_test = ProgramTest::new(
-        "tic-tac-toe", // Run the BPF version with `cargo test-bpf`
+        "tic_tac_toe", // Run the BPF version with `cargo test-bpf`
         program_id,
         processor!(process_instruction), // Run the native version with `cargo test`
     );

@@ -19,6 +19,7 @@ on your OS, they may already be installed:
 - Install node (v14 recommended)
 - Install npm
 - Install the latest Rust stable from https://rustup.rs/
+    - on problems with `cargo test-bpf` see [issue](https://github.com/solana-labs/example-helloworld/issues/451)
 - Install Velas Tool Suite from
   https://docs.velas.com/cli/install-velas-cli-tools
 
@@ -48,7 +49,7 @@ npm run build:program-rust
 
 Deploy it:
 ```bash
-velas program deploy dist/program/helloworld.so
+velas program deploy dist/program/tic_tac_toe.so
 ```
 
 ## Initializing and playing the game
