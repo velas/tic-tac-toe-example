@@ -70,7 +70,7 @@ Creating game account: 65FuAgjgSGKqZs6cWBLvKgqd3oD5DPbwvVhDRf7RZos5
 
 After the game has been initialized, we can check its state (don't forget to replace game account pubkey with your own here and after):
 ```bash
-$ npm start game-state 65FuAgjgSGKqZs6cWBLvKgqd3oD5DPbwvVhDRf7RZos5
+$ npm start game-state 65FuAgjgSGKqZs6cWBLvKgqd3oD5DPbwvVhDRf7RZos5 /path/to/keypairs/player1.json
 ```
 
 Game field shoud be empty, pubkeys of players authorized to play should be set up (pubkeys of players will be different). The status says that it is now the turn of the first player:
