@@ -230,6 +230,45 @@ export async function checkProgram(
   return { programId, gamePubkey }
 }
 
+class GameResetInstr {
+  status = 0
+  private player_one = new Uint8Array(32).fill(0)
+  private player_two = new Uint8Array(32).fill(0)
+
+  constructor(
+    fields: {
+      player_one: Uint8Array,
+      player_two: Uint8Array
+    } | undefined = undefined
+  ) {
+    if (fields) {
+      this.status = 0
+      this.player_one = fields.player_one
+      this.player_two = fields.player_two
+    }
+  }
+
+  playerOnePubkey() { return new PublicKey(this.player_one) }
+  playerTwoPubkey() { return new PublicKey(this.player_two) }
+}
+
+/**
+ * Borsh schema definition for game account
+ */
+const GameResetInstrSchema = new Map([
+  [
+    GameResetInstr,
+    {
+      kind: 'struct',
+      fields: [
+        ['status', 'u8'],
+        ['player_one', [32]],
+        ['player_two', [32]]
+      ]
+    }
+  ],
+])
+
 export async function gameReset(
   connection: Connection,
   programId: PublicKey,
@@ -238,6 +277,8 @@ export async function gameReset(
   payer: Keypair
 ): Promise<any>
 {
+  console.log('executing game reset:')
+
   const instruction = new TransactionInstruction({
     keys: [
       { pubkey: gamePubkey, isSigner: false, isWritable: true },
@@ -245,7 +286,14 @@ export async function gameReset(
     ],
     programId,
     data: Buffer.from(
-      [0x00, ...payer.publicKey.toBytes(), ...secondPlayer.toBytes()]
+			
+	borsh.serialize(
+	  GameResetInstrSchema,
+	  new GameResetInstr({
+		player_one: payer.publicKey.toBytes(), 
+		player_two: secondPlayer.toBytes()}
+	),
+	)
     ),
   })
   await sendAndConfirmTransaction(
