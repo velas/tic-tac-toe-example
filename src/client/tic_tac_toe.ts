@@ -286,14 +286,14 @@ export async function gameReset(
     ],
     programId,
     data: Buffer.from(
-			
-	borsh.serialize(
-	  GameResetInstrSchema,
-	  new GameResetInstr({
-		player_one: payer.publicKey.toBytes(), 
-		player_two: secondPlayer.toBytes()}
+
+      borsh.serialize(
+	GameResetInstrSchema,
+	new GameResetInstr({
+	  player_one: payer.publicKey.toBytes(), 
+	  player_two: secondPlayer.toBytes()}
 	),
-	)
+      )
     ),
   })
   await sendAndConfirmTransaction(
@@ -303,21 +303,63 @@ export async function gameReset(
   )
 }
 
+export class MakeTurnInstr {
+  status = 1
+  private row = 0
+  private column = 0
+
+  constructor(
+    fields: {
+      row: number,
+      column: number
+    } | undefined = undefined
+  ) {
+    if (fields) {
+      this.status = 1
+      this.row = fields.row
+      this.column = fields.column
+    }
+  }
+
+}
+
+/**
+* Borsh schema definition for game account
+*/
+const MakeTurnInstrSchema = new Map([
+  [
+    MakeTurnInstr,
+    {
+      kind: 'struct',
+      fields: [
+	['status', 'u8'],
+	['row', 'u8'],
+	['column', 'u8']
+      ]
+    }
+  ],
+])
+
 export async function makeTurn(
   connection: Connection,
   programId: PublicKey,
   gamePubkey: PublicKey,
   payer: Keypair,
-  instructionData: number[]
+  makeTurn: MakeTurnInstr
 ): Promise<void>
 {
+  console.log(`executing makeTurn`)
+  const data = borsh.serialize(
+    MakeTurnInstrSchema,
+    makeTurn,
+  )
   const instruction = new TransactionInstruction({
     keys: [
       { pubkey: gamePubkey, isSigner: false, isWritable: true },
       { pubkey: payer.publicKey, isSigner: true, isWritable: true }
     ],
     programId,
-    data: Buffer.from(instructionData),
+    data: Buffer.from(data),
   })
   await sendAndConfirmTransaction(
     connection,

@@ -11,6 +11,7 @@ import {
   checkProgram,
   gameReset,
   makeTurn,
+  MakeTurnInstr,
   reportPlayField,
   printGameState
 } from './tic_tac_toe'
@@ -103,7 +104,11 @@ async function runMakeTurn(gameAccount: string, row: number, column: number, fil
   console.log(`player "${payer.publicKey}" is making a move...`)
 
   // Make turn at specified coordinates
-  await makeTurn(connection, programId, gamePubkey, payer, [0x01, row, column])
+  await makeTurn(
+	connection, programId, gamePubkey, payer, 
+	new MakeTurnInstr({row: row, column: column})
+  )
+
 
   let gameState = await reportPlayField(connection, gamePubkey)
 
