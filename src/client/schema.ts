@@ -1,15 +1,11 @@
-import { PublicKey } from "@solana/web3.js";
-import BN from "bn.js";
-import Enum from "./extensions/enum";
-import Struct from "./extensions/struct";
-import { borshPublicKey } from "./extensions/publicKey";
-
-borshPublicKey();
+import Enum from './helpers_default/enum';
+import Struct from './helpers_default/struct';
+import PublicKeyBE from './helpers_default/be_pubkey';
 
 export class GameCell extends Enum {
-    gameCellEmpty: GameCellEmpty;
-    gameCellTic: GameCellTic;
-    gameCellTac: GameCellTac;
+    gameCellEmpty: GameCellEmpty | undefined;
+    gameCellTic: GameCellTic | undefined;
+    gameCellTac: GameCellTac | undefined;
 };
 
 export class GameCellEmpty extends Struct {
@@ -21,11 +17,27 @@ export class GameCellTic extends Struct {
 export class GameCellTac extends Struct {
 };
 
+
+export class GameInstruction extends Enum {
+    gameInstructionGameReset: GameInstructionGameReset | undefined;
+    gameInstructionMakeTurn: GameInstructionMakeTurn | undefined;
+};
+
+export class GameInstructionGameReset extends Struct {
+    playerOne: PublicKeyBE | undefined;
+    playerTwo: PublicKeyBE | undefined;
+};
+
+export class GameInstructionMakeTurn extends Struct {
+    row: number | undefined;
+    col: number | undefined;
+};
+
 export class GameStatus extends Enum {
-    gameStatusUninitialized: GameStatusUninitialized;
-    gameStatusPlayerOneTurn: GameStatusPlayerOneTurn;
-    gameStatusPlayerTwoTurn: GameStatusPlayerTwoTurn;
-    gameStatusGameEnd: GameStatusGameEnd;
+    gameStatusUninitialized: GameStatusUninitialized | undefined;
+    gameStatusPlayerOneTurn: GameStatusPlayerOneTurn | undefined;
+    gameStatusPlayerTwoTurn: GameStatusPlayerTwoTurn | undefined;
+    gameStatusGameEnd: GameStatusGameEnd | undefined;
 };
 
 export class GameStatusUninitialized extends Struct {
@@ -40,135 +52,129 @@ export class GameStatusPlayerTwoTurn extends Struct {
 export class GameStatusGameEnd extends Struct {
 };
 
-export class GameInstruction extends Enum {
-    gameInstructionGameReset: GameInstructionGameReset;
-    gameInstructionMakeTurn: GameInstructionMakeTurn;
-};
-
-export class GameInstructionGameReset extends Struct {
-    playerOne: PublicKey;
-    playerTwo: PublicKey;
-};
-
-export class GameInstructionMakeTurn extends Struct {
-    row: number;
-    col: number;
-};
-
 export class GameState extends Struct {
-    playField: GameCell[];
-    status: GameStatus;
-    playerOne: PublicKey;
-    playerTwo: PublicKey;
+    playField: GameCell[] | undefined;
+    status: GameStatus | undefined;
+    playerOne: PublicKeyBE | undefined;
+    playerTwo: PublicKeyBE | undefined;
 };
 
-export const SCHEMA = new Map<any, any>([
+export const GAME_SCHEMA = new Map<any, any>([
     [
-            GameCell,
-            {
-                kind: 'enum', field: 'enum', values: [
-			['gameCellEmpty', GameCellEmpty],
-			['gameCellTic', GameCellTic],
-			['gameCellTac', GameCellTac],
-                ],
-            },
+	GameCell,
+	{
+	    kind: 'enum', field: 'enum', values: [
+		['gameCellEmpty', GameCellEmpty],
+		['gameCellTic', GameCellTic],
+		['gameCellTac', GameCellTac],
+	    ],
+	},
     ],
     [
-            GameCellEmpty,
-            {
-                kind: 'struct', fields: [
-                ],
-            },
+	GameCellEmpty,
+	{
+	    kind: 'struct', fields: [
+	    ],
+	},
     ],
     [
-            GameCellTic,
-            {
-                kind: 'struct', fields: [
-                ],
-            },
+	GameCellTic,
+	{
+	    kind: 'struct', fields: [
+	    ],
+	},
     ],
     [
-            GameCellTac,
-            {
-                kind: 'struct', fields: [
-                ],
-            },
+	GameCellTac,
+	{
+	    kind: 'struct', fields: [
+	    ],
+	},
     ],
     [
-            GameStatus,
-            {
-                kind: 'enum', field: 'enum', values: [
-			['gameStatusUninitialized', GameStatusUninitialized],
-			['gameStatusPlayerOneTurn', GameStatusPlayerOneTurn],
-			['gameStatusPlayerTwoTurn', GameStatusPlayerTwoTurn],
-			['gameStatusGameEnd', GameStatusGameEnd],
-                ],
-            },
+	GameInstruction,
+	{
+	    kind: 'enum', field: 'enum', values: [
+		['gameInstructionGameReset', GameInstructionGameReset],
+		['gameInstructionMakeTurn', GameInstructionMakeTurn],
+	    ],
+	},
     ],
     [
-            GameStatusUninitialized,
-            {
-                kind: 'struct', fields: [
-                ],
-            },
+	GameInstructionGameReset,
+	{
+	    kind: 'struct', fields: [
+		['playerOne', PublicKeyBE],
+		['playerTwo', PublicKeyBE],
+	    ],
+	},
     ],
     [
-            GameStatusPlayerOneTurn,
-            {
-                kind: 'struct', fields: [
-                ],
-            },
+	GameInstructionMakeTurn,
+	{
+	    kind: 'struct', fields: [
+		['row', 'u8'],
+		['col', 'u8'],
+	    ],
+	},
     ],
     [
-            GameStatusPlayerTwoTurn,
-            {
-                kind: 'struct', fields: [
-                ],
-            },
+	PublicKeyBE,
+	{
+	    kind: 'struct',
+	    fields: [
+		['value', [32]],
+	    ]
+	}
     ],
     [
-            GameStatusGameEnd,
-            {
-                kind: 'struct', fields: [
-                ],
-            },
+	GameStatus,
+	{
+	    kind: 'enum', field: 'enum', values: [
+		['gameStatusUninitialized', GameStatusUninitialized],
+		['gameStatusPlayerOneTurn', GameStatusPlayerOneTurn],
+		['gameStatusPlayerTwoTurn', GameStatusPlayerTwoTurn],
+		['gameStatusGameEnd', GameStatusGameEnd],
+	    ],
+	},
     ],
     [
-            GameInstruction,
-            {
-                kind: 'enum', field: 'enum', values: [
-			['gameInstructionGameReset', GameInstructionGameReset],
-			['gameInstructionMakeTurn', GameInstructionMakeTurn],
-                ],
-            },
+	GameStatusUninitialized,
+	{
+	    kind: 'struct', fields: [
+	    ],
+	},
     ],
     [
-            GameInstructionGameReset,
-            {
-                kind: 'struct', fields: [
-			['playerOne', 'publicKey'],
-			['playerTwo', 'publicKey'],
-                ],
-            },
+	GameStatusPlayerOneTurn,
+	{
+	    kind: 'struct', fields: [
+	    ],
+	},
     ],
     [
-            GameInstructionMakeTurn,
-            {
-                kind: 'struct', fields: [
-			['row', 'u8'],
-			['col', 'u8'],
-                ],
-            },
+	GameStatusPlayerTwoTurn,
+	{
+	    kind: 'struct', fields: [
+	    ],
+	},
     ],
     [
-            GameState,
-            {
-                kind: 'struct', fields: [
-			['playField', [GameCell, 9]],
-			['status', GameStatus],
-			['playerOne', 'publicKey'],
-			['playerTwo', 'publicKey'],
-                ],
-            },
+	GameStatusGameEnd,
+	{
+	    kind: 'struct', fields: [
+	    ],
+	},
+    ],
+    [
+	GameState,
+	{
+	    kind: 'struct', fields: [
+		['playField', [GameCell, 9]],
+	    ['status', GameStatus],
+		['playerOne', PublicKeyBE],
+		['playerTwo', PublicKeyBE],
+	    ],
+	},
     ],
 ]);

@@ -21,6 +21,8 @@ import {
   newAccountWithLamports,
   createKeypairFromFile,
 } from './utils'
+import PublicKeyBE from './helpers_default/be_pubkey'
+import { GameCell, GameCellTac, GameInstruction, GameInstructionMakeTurn, GameState, GameStatus, GameStatusPlayerOneTurn, GAME_SCHEMA } from './schema'
 
 /**
  * Path to program files
@@ -40,60 +42,23 @@ const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'tic_tac_toe.so')
  */
 const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'tic_tac_toe-keypair.json')
 
-enum GameStatus { Undefined, PlayerOneTurn, PlayerTwoTurn, GameEnd }
-/**
- * The state of a game account managed by the tic-tac-toe program
- */
-class GameState {
-  play_field = new Array(9).fill(0)
-  status = 0
-  private player_one = new Array(32).fill(0)
-  private player_two = new Array(32).fill(0)
-
-  constructor(
-    fields: {
-      play_field: number[],
-      status: number,
-      player_one: number[],
-      player_two: number[]
-    } | undefined = undefined
-  ) {
-    if (fields) {
-      this.play_field = fields.play_field
-      this.status = fields.status
-      this.player_one = fields.player_one
-      this.player_two = fields.player_two
-    }
-  }
-
-  playerOnePubkey() { return new PublicKey(this.player_one) }
-  playerTwoPubkey() { return new PublicKey(this.player_two) }
-}
-
-/**
- * Borsh schema definition for game account
- */
-const GameSchema = new Map([
-  [
-    GameState,
-    {
-      kind: 'struct',
-      fields: [
-        ['play_field', [9]],
-        ['status', 'u8'],
-        ['player_one', [32]],
-        ['player_two', [32]]
-      ]
-    }
-  ],
-])
 
 /**
  * The expected size of game account.
  */
 const GAME_STATE_SIZE = borsh.serialize(
-  GameSchema,
-  new GameState(),
+  GAME_SCHEMA,
+  new GameState({
+    playField:  new Array(9).fill(
+      new GameCell({
+	gameCellTac: new GameCellTac({})
+    })),
+    status:   new GameStatus({
+      gameStatusPlayerOneTurn: new GameStatusPlayerOneTurn({})
+    }),
+    playerOne: new PublicKeyBE({value: new Uint8Array(32)}),
+    playerTwo: new PublicKeyBE({value: new Uint8Array(32)}),
+    }),
 ).length
 
 /**
@@ -303,55 +268,21 @@ export async function gameReset(
   )
 }
 
-export class MakeTurnInstr {
-  status = 1
-  private row = 0
-  private column = 0
-
-  constructor(
-    fields: {
-      row: number,
-      column: number
-    } | undefined = undefined
-  ) {
-    if (fields) {
-      this.status = 1
-      this.row = fields.row
-      this.column = fields.column
-    }
-  }
-
-}
-
-/**
-* Borsh schema definition for game account
-*/
-const MakeTurnInstrSchema = new Map([
-  [
-    MakeTurnInstr,
-    {
-      kind: 'struct',
-      fields: [
-	['status', 'u8'],
-	['row', 'u8'],
-	['column', 'u8']
-      ]
-    }
-  ],
-])
 
 export async function makeTurn(
   connection: Connection,
   programId: PublicKey,
   gamePubkey: PublicKey,
   payer: Keypair,
-  makeTurn: MakeTurnInstr
+  makeTurn: GameInstructionMakeTurn
 ): Promise<void>
 {
   console.log(`executing makeTurn`)
   const data = borsh.serialize(
-    MakeTurnInstrSchema,
-    makeTurn,
+    GAME_SCHEMA,
+    new GameInstruction(
+      {gameInstructionMakeTurn: makeTurn}
+    ),
   )
   const instruction = new TransactionInstruction({
     keys: [
@@ -382,7 +313,7 @@ export async function reportPlayField(
   }
 
   const gameState: GameState = borsh.deserialize(
-    GameSchema,
+    GAME_SCHEMA,
     GameState,
     accountInfo.data,
   )
@@ -394,12 +325,12 @@ export function printGameState(gameState: GameState) {
   console.log('Game field:')
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
-      let fieldContent = gameState.play_field[row * 3 + col]
+      let fieldContent = gameState.playField![row * 3 + col]
       let drawSign = '*'
-      if (fieldContent == 1) {
+      if (fieldContent.enum == 'gameCellTac') {
         drawSign = 'X'
       }
-      if (fieldContent == 2) {
+      if (fieldContent.enum == 'gameCellTic') {
         drawSign = '0'
       }
       process.stdout.write(drawSign + ' ')
@@ -407,7 +338,7 @@ export function printGameState(gameState: GameState) {
     process.stdout.write('\n')
   }
 
-  console.log('Player one: ' + gameState.playerOnePubkey())
-  console.log('Player two: ' + gameState.playerTwoPubkey())
-  console.log('Status: ' + GameStatus[gameState.status])
+  console.log('Player one: ' + gameState.playerOne!.solPubKey)
+  console.log('Player two: ' + gameState.playerTwo!.solPubKey)
+  console.log('Status: ' + gameState.status!.enum)
 }

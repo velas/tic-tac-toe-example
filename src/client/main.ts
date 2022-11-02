@@ -4,6 +4,7 @@
 
 import { PublicKey } from '@velas/web3'
 import { program } from 'commander'
+import { GameInstructionMakeTurn } from './schema'
 
 import {
   establishConnection,
@@ -11,7 +12,6 @@ import {
   checkProgram,
   gameReset,
   makeTurn,
-  MakeTurnInstr,
   reportPlayField,
   printGameState
 } from './tic_tac_toe'
@@ -106,7 +106,7 @@ async function runMakeTurn(gameAccount: string, row: number, column: number, fil
   // Make turn at specified coordinates
   await makeTurn(
 	connection, programId, gamePubkey, payer, 
-	new MakeTurnInstr({row: row, column: column})
+	new GameInstructionMakeTurn({row: row, col: column})
   )
 
 

@@ -1,7 +1,7 @@
 export default class Struct {
-    constructor(properties) {
+    constructor(properties: any) {
         Object.keys(properties).map((key) => {
-            this[key] = properties[key];
+            this[key as keyof typeof this] = properties[key];
         });
     }
 }
