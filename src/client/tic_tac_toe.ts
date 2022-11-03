@@ -22,7 +22,7 @@ import {
   createKeypairFromFile,
 } from './utils'
 import PublicKeyBE from './helpers_default/be_pubkey'
-import { GameCell, GameCellTac, GameInstruction, GameInstructionMakeTurn, GameState, GameStatus, GameStatusPlayerOneTurn, GAME_SCHEMA } from './schema'
+import { GameCell, GameCellTac, GameInstruction, GameInstructionGameReset, GameInstructionMakeTurn, GameState, GameStatus, GameStatusPlayerOneTurn, GAME_SCHEMA } from './schema'
 
 /**
  * Path to program files
@@ -195,45 +195,6 @@ export async function checkProgram(
   return { programId, gamePubkey }
 }
 
-class GameResetInstr {
-  status = 0
-  private player_one = new Uint8Array(32).fill(0)
-  private player_two = new Uint8Array(32).fill(0)
-
-  constructor(
-    fields: {
-      player_one: Uint8Array,
-      player_two: Uint8Array
-    } | undefined = undefined
-  ) {
-    if (fields) {
-      this.status = 0
-      this.player_one = fields.player_one
-      this.player_two = fields.player_two
-    }
-  }
-
-  playerOnePubkey() { return new PublicKey(this.player_one) }
-  playerTwoPubkey() { return new PublicKey(this.player_two) }
-}
-
-/**
- * Borsh schema definition for game account
- */
-const GameResetInstrSchema = new Map([
-  [
-    GameResetInstr,
-    {
-      kind: 'struct',
-      fields: [
-        ['status', 'u8'],
-        ['player_one', [32]],
-        ['player_two', [32]]
-      ]
-    }
-  ],
-])
-
 export async function gameReset(
   connection: Connection,
   programId: PublicKey,
@@ -253,12 +214,17 @@ export async function gameReset(
     data: Buffer.from(
 
       borsh.serialize(
-	GameResetInstrSchema,
-	new GameResetInstr({
-	  player_one: payer.publicKey.toBytes(), 
-	  player_two: secondPlayer.toBytes()}
+	GAME_SCHEMA,
+	new GameInstruction(
+	  {gameInstructionGameReset: new GameInstructionGameReset(
+	    {
+	      playerOne: new PublicKeyBE({value: payer.publicKey.toBytes()}), 
+	      playerTwo: new PublicKeyBE({value: secondPlayer.toBytes()})
+	    }
+	  )}
 	),
       )
+
     ),
   })
   await sendAndConfirmTransaction(
