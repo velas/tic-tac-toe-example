@@ -24,20 +24,20 @@ export class GameInstruction extends Enum {
 };
 
 export class GameInstructionGameReset extends Struct {
-    playerOne: PublicKeyBE | undefined;
-    playerTwo: PublicKeyBE | undefined;
+    playerOne: PublicKeyBE;
+    playerTwo: PublicKeyBE;
 };
 
 export class GameInstructionMakeTurn extends Struct {
-    row: number | undefined;
-    col: number | undefined;
+    row: number;
+    col: number;
 };
 
 export class GameStatus extends Enum {
-    gameStatusUninitialized: GameStatusUninitialized | undefined;
-    gameStatusPlayerOneTurn: GameStatusPlayerOneTurn | undefined;
-    gameStatusPlayerTwoTurn: GameStatusPlayerTwoTurn | undefined;
-    gameStatusGameEnd: GameStatusGameEnd | undefined;
+    gameStatusUninitialized: GameStatusUninitialized  | undefined;
+    gameStatusPlayerOneTurn: GameStatusPlayerOneTurn  | undefined;
+    gameStatusPlayerTwoTurn: GameStatusPlayerTwoTurn  | undefined;
+    gameStatusGameEnd: GameStatusGameEnd  | undefined;
 };
 
 export class GameStatusUninitialized extends Struct {
@@ -53,10 +53,10 @@ export class GameStatusGameEnd extends Struct {
 };
 
 export class GameState extends Struct {
-    playField: GameCell[] | undefined;
-    status: GameStatus | undefined;
-    playerOne: PublicKeyBE | undefined;
-    playerTwo: PublicKeyBE | undefined;
+    playField: GameCell[] ;
+    status: GameStatus ;
+    playerOne: PublicKeyBE ;
+    playerTwo: PublicKeyBE ;
 };
 
 export const GAME_SCHEMA = new Map<any, any>([
