@@ -10,38 +10,50 @@ import {
   TransactionInstruction,
   Transaction,
   sendAndConfirmTransaction,
-} from '@velas/web3'
-import fs from 'mz/fs'
-import path from 'path'
-import * as borsh from 'borsh'
+} from '@velas/web3';
+import fs from 'mz/fs';
+import path from 'path';
+import * as borsh from 'borsh';
 
 import {
   getPayer,
   getRpcUrl,
   newAccountWithLamports,
   createKeypairFromFile,
-} from './utils'
-import PublicKeyBE from './helpers_default/be_pubkey'
-import { GameCell, GameCellTac, GameInstruction, GameInstructionGameReset, GameInstructionMakeTurn, GameState, GameStatus, GameStatusPlayerOneTurn, GAME_SCHEMA } from './schema'
+} from './utils';
+import PublicKeyBE from './helpers_default/be_pubkey';
+import {
+  GameCell,
+  GameCellTac,
+  GameInstruction,
+  GameInstructionGameReset,
+  GameInstructionMakeTurn,
+  GameState,
+  GameStatus,
+  GameStatusPlayerOneTurn,
+  GAME_SCHEMA,
+} from './schema';
 
 /**
  * Path to program files
  */
-const PROGRAM_PATH = path.resolve(__dirname, '../../dist/program')
+const PROGRAM_PATH = path.resolve(__dirname, '../../dist/program');
 
 /**
  * Path to program shared object file which should be deployed on chain.
  * This file is created when running either:
  *   - `npm run build:program-rust`
  */
-const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'tic_tac_toe.so')
+const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'tic_tac_toe.so');
 
 /**
  * Path to the keypair of the deployed program.
  * This file is created when running `velas program deploy dist/program/tic_tac_toe.so`
  */
-const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'tic_tac_toe-keypair.json')
-
+const PROGRAM_KEYPAIR_PATH = path.join(
+  PROGRAM_PATH,
+  'tic_tac_toe-keypair.json',
+);
 
 /**
  * The expected size of game account.
@@ -49,27 +61,28 @@ const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'tic_tac_toe-keypair.json')
 const GAME_STATE_SIZE = borsh.serialize(
   GAME_SCHEMA,
   new GameState({
-    playField:  new Array(9).fill(
+    playField: new Array(9).fill(
       new GameCell({
-	gameCellTac: new GameCellTac({})
-    })),
-    status:   new GameStatus({
-      gameStatusPlayerOneTurn: new GameStatusPlayerOneTurn({})
+        gameCellTac: new GameCellTac({}),
+      }),
+    ),
+    status: new GameStatus({
+      gameStatusPlayerOneTurn: new GameStatusPlayerOneTurn({}),
     }),
     playerOne: new PublicKeyBE({value: new Uint8Array(32)}),
     playerTwo: new PublicKeyBE({value: new Uint8Array(32)}),
-    }),
-).length
+  }),
+).length;
 
 /**
  * Establish a connection to the cluster
  */
 export async function establishConnection(): Promise<Connection> {
-  const rpcUrl = await getRpcUrl()
-  const connection = new Connection(rpcUrl, 'confirmed')
-  const version = await connection.getVersion()
-  console.log('Connection to cluster established:', rpcUrl, version)
-  return connection
+  const rpcUrl = await getRpcUrl();
+  const connection = new Connection(rpcUrl, 'confirmed');
+  const version = await connection.getVersion();
+  console.log('Connection to cluster established:', rpcUrl, version);
+  return connection;
 }
 
 /**
@@ -80,35 +93,34 @@ export async function establishConnection(): Promise<Connection> {
  */
 export async function establishPayer(
   connection: Connection,
-  filePath: string | undefined = undefined
-): Promise<Keypair>
-{
-  let fees = 0
-  const {feeCalculator} = await connection.getRecentBlockhash()
+  filePath: string | undefined = undefined,
+): Promise<Keypair> {
+  let fees = 0;
+  const {feeCalculator} = await connection.getRecentBlockhash();
 
   // Calculate the cost to fund the game account
-  fees += await connection.getMinimumBalanceForRentExemption(GAME_STATE_SIZE)
+  fees += await connection.getMinimumBalanceForRentExemption(GAME_STATE_SIZE);
 
   // Calculate the cost of sending transactions
-  fees += feeCalculator.lamportsPerSignature * 100 // wag
+  fees += feeCalculator.lamportsPerSignature * 100; // wag
 
-  let payer
+  let payer;
 
   try {
-    payer = await getPayer(filePath)
+    payer = await getPayer(filePath);
   } catch (err) {
     // Fund a new payer via airdrop
-    payer = await newAccountWithLamports(connection, fees)
+    payer = await newAccountWithLamports(connection, fees);
   }
 
-  const lamports = await connection.getBalance(payer.publicKey)
+  const lamports = await connection.getBalance(payer.publicKey);
   if (lamports < fees) {
     // This should only happen when using cli config keypair
     const sig = await connection.requestAirdrop(
       payer.publicKey,
       fees - lamports,
-    )
-    await connection.confirmTransaction(sig)
+    );
+    await connection.confirmTransaction(sig);
   }
 
   console.log(
@@ -117,9 +129,9 @@ export async function establishPayer(
     'containing',
     lamports / LAMPORTS_PER_SOL,
     'VLX to pay for fees',
-  )
+  );
 
-  return payer
+  return payer;
 }
 
 /**
@@ -127,55 +139,51 @@ export async function establishPayer(
  */
 export async function checkProgram(
   connection: Connection,
-  payer: Keypair
-): Promise<{ programId: PublicKey, gamePubkey: PublicKey}>
-{
+  payer: Keypair,
+): Promise<{programId: PublicKey; gamePubkey: PublicKey}> {
   // Read program id from keypair file
-  let programId: PublicKey
+  let programId: PublicKey;
   try {
-    const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH)
-    programId = programKeypair.publicKey
+    const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
+    programId = programKeypair.publicKey;
   } catch (err) {
-    const errMsg = (err as Error).message
+    const errMsg = (err as Error).message;
     throw new Error(
       `Failed to read program keypair at '${PROGRAM_KEYPAIR_PATH}' due to error: ${errMsg}. Program may need to be deployed with \`velas program deploy dist/program/tic_tac_toe.so\``,
-    )
+    );
   }
 
   // Check if the program has been deployed
-  const programInfo = await connection.getAccountInfo(programId)
+  const programInfo = await connection.getAccountInfo(programId);
   if (programInfo === null) {
     if (fs.existsSync(PROGRAM_SO_PATH)) {
       throw new Error(
         'Program needs to be deployed with `velas program deploy dist/program/tic_tac_toe.so`',
-      )
+      );
     } else {
-      throw new Error('Program needs to be built and deployed')
+      throw new Error('Program needs to be built and deployed');
     }
   } else if (!programInfo.executable) {
-    throw new Error(`Program is not executable`)
+    throw new Error(`Program is not executable`);
   }
-  console.log(`Using program ${programId.toBase58()}`)
+  console.log(`Using program ${programId.toBase58()}`);
 
   // Derive the address (public key) of a game account
   // from the program so that it's easy to find later.
-  const GAME_SEED = 'hello'
+  const GAME_SEED = 'hello';
   const gamePubkey = await PublicKey.createWithSeed(
     payer.publicKey,
     GAME_SEED,
     programId,
-  )
+  );
 
   // Check if the game account has already been created
-  const gameAccount = await connection.getAccountInfo(gamePubkey)
+  const gameAccount = await connection.getAccountInfo(gamePubkey);
   if (gameAccount === null) {
-    console.log(
-      'Creating game account: ',
-      gamePubkey.toBase58()
-    )
+    console.log('Creating game account: ', gamePubkey.toBase58());
     const lamports = await connection.getMinimumBalanceForRentExemption(
       GAME_STATE_SIZE,
-    )
+    );
 
     const transaction = new Transaction().add(
       SystemProgram.createAccountWithSeed({
@@ -187,12 +195,12 @@ export async function checkProgram(
         space: GAME_STATE_SIZE,
         programId,
       }),
-    )
+    );
 
-    await sendAndConfirmTransaction(connection, transaction, [payer])
+    await sendAndConfirmTransaction(connection, transaction, [payer]);
   }
 
-  return { programId, gamePubkey }
+  return {programId, gamePubkey};
 }
 
 export async function gameReset(
@@ -200,69 +208,60 @@ export async function gameReset(
   programId: PublicKey,
   gamePubkey: PublicKey,
   secondPlayer: PublicKey,
-  payer: Keypair
-): Promise<any>
-{
-  console.log('executing game reset:')
+  payer: Keypair,
+): Promise<any> {
+  console.log('executing game reset:');
 
   const instruction = new TransactionInstruction({
     keys: [
-      { pubkey: gamePubkey, isSigner: false, isWritable: true },
-      { pubkey: payer.publicKey, isSigner: true, isWritable: true },
+      {pubkey: gamePubkey, isSigner: false, isWritable: true},
+      {pubkey: payer.publicKey, isSigner: true, isWritable: true},
     ],
     programId,
     data: Buffer.from(
-
       borsh.serialize(
-	GAME_SCHEMA,
-	new GameInstruction(
-	  {gameInstructionGameReset: new GameInstructionGameReset(
-	    {
-	      playerOne: new PublicKeyBE({value: payer.publicKey.toBytes()}), 
-	      playerTwo: new PublicKeyBE({value: secondPlayer.toBytes()})
-	    }
-	  )}
-	),
-      )
-
+        GAME_SCHEMA,
+        new GameInstruction({
+          gameInstructionGameReset: new GameInstructionGameReset({
+            playerOne: new PublicKeyBE({value: payer.publicKey.toBytes()}),
+            playerTwo: new PublicKeyBE({value: secondPlayer.toBytes()}),
+          }),
+        }),
+      ),
     ),
-  })
+  });
   await sendAndConfirmTransaction(
     connection,
     new Transaction().add(instruction),
     [payer],
-  )
+  );
 }
-
 
 export async function makeTurn(
   connection: Connection,
   programId: PublicKey,
   gamePubkey: PublicKey,
   payer: Keypair,
-  makeTurn: GameInstructionMakeTurn
-): Promise<void>
-{
-  console.log(`executing makeTurn`)
+  makeTurn: GameInstructionMakeTurn,
+): Promise<void> {
+  console.log(`executing makeTurn`);
   const data = borsh.serialize(
     GAME_SCHEMA,
-    new GameInstruction(
-      {gameInstructionMakeTurn: makeTurn}
-    ),
-  )
+    new GameInstruction({gameInstructionMakeTurn: makeTurn}),
+  );
   const instruction = new TransactionInstruction({
     keys: [
-      { pubkey: gamePubkey, isSigner: false, isWritable: true },
-      { pubkey: payer.publicKey, isSigner: true, isWritable: true }
+      {pubkey: gamePubkey, isSigner: false, isWritable: true},
+      {pubkey: payer.publicKey, isSigner: true, isWritable: true},
     ],
     programId,
     data: Buffer.from(data),
-  })
+  });
   await sendAndConfirmTransaction(
     connection,
     new Transaction().add(instruction),
     [payer],
-  )
+  );
 }
 
 /**
@@ -270,41 +269,40 @@ export async function makeTurn(
  */
 export async function reportPlayField(
   connection: Connection,
-  gamePubkey: PublicKey
-): Promise<GameState>
-{
-  const accountInfo = await connection.getAccountInfo(gamePubkey)
+  gamePubkey: PublicKey,
+): Promise<GameState> {
+  const accountInfo = await connection.getAccountInfo(gamePubkey);
   if (accountInfo === null) {
-    throw 'Error: cannot find the game account'
+    throw 'Error: cannot find the game account';
   }
 
   const gameState: GameState = borsh.deserialize(
     GAME_SCHEMA,
     GameState,
     accountInfo.data,
-  )
+  );
 
-  return gameState
+  return gameState;
 }
 
 export function printGameState(gameState: GameState) {
-  console.log('Game field:')
+  console.log('Game field:');
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
-      let fieldContent = gameState.playField![row * 3 + col]
-      let drawSign = '*'
+      let fieldContent = gameState.playField![row * 3 + col];
+      let drawSign = '*';
       if (fieldContent.enum == 'gameCellTac') {
-        drawSign = 'X'
+        drawSign = 'X';
       }
       if (fieldContent.enum == 'gameCellTic') {
-        drawSign = '0'
+        drawSign = '0';
       }
-      process.stdout.write(drawSign + ' ')
+      process.stdout.write(drawSign + ' ');
     }
-    process.stdout.write('\n')
+    process.stdout.write('\n');
   }
 
-  console.log('Player one: ' + gameState.playerOne!.solPubKey)
-  console.log('Player two: ' + gameState.playerTwo!.solPubKey)
-  console.log('Status: ' + gameState.status!.enum)
+  console.log('Player one: ' + gameState.playerOne!.solPubKey);
+  console.log('Player two: ' + gameState.playerTwo!.solPubKey);
+  console.log('Status: ' + gameState.status!.enum);
 }
