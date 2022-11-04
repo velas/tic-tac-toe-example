@@ -57,6 +57,7 @@ dependencies = [
 [[package]]
 name = "agsol-borsh-schema"
 version = "0.0.2"
+source = "git+https://github.com/dj8yfo/agsol-borsh-schema.git#ca5853b61f2490dff1e30e57a408e3b2157b14e4"
 dependencies = [
  "agsol-borsh-schema-derive",
 ]
@@ -64,6 +65,7 @@ dependencies = [
 [[package]]
 name = "agsol-borsh-schema-derive"
 version = "0.0.1"
+source = "git+https://github.com/dj8yfo/agsol-borsh-schema.git#ca5853b61f2490dff1e30e57a408e3b2157b14e4"
 dependencies = [
  "quote 1.0.21",
  "syn 1.0.103",

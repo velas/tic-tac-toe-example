@@ -12,6 +12,13 @@ The project comprises of:
 * An on-chain tic-tac-toe program with game logic
 * A client that can initialize new game and play it with other player
 
+# To generate serialization schema from rust program
+```bash
+npm run run:borsh-gen
+```
+
+The output will go to `./src/client/schema.ts`
+
 ## Quick start
 The following dependencies are required to build and run this example, depending
 on your OS, they may already be installed:

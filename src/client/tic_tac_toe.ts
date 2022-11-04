@@ -21,7 +21,9 @@ import {
   newAccountWithLamports,
   createKeypairFromFile,
 } from './utils';
-import PublicKeyBE from './helpers_default/be_pubkey';
+
+import {PublicKeyBE} from 'ts-borsh-schema';
+
 import {
   GameCell,
   GameCellTac,

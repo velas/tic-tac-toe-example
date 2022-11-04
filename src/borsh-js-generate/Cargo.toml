@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
 
-agsol-borsh-schema = { version = "0.0.2", features = ["full"], path = "../../../agsol-borsh-schema" }
+agsol-borsh-schema = { version = "0.0.2", features = ["full"], git = "https://github.com/dj8yfo/agsol-borsh-schema.git" }
 anyhow = "1.0"
