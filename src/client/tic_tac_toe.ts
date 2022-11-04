@@ -31,7 +31,7 @@ import {
   GameState,
   GameStatus,
   GameStatusPlayerOneTurn,
-  GAME_SCHEMA,
+  SCHEMA,
 } from './schema';
 
 /**
@@ -59,7 +59,7 @@ const PROGRAM_KEYPAIR_PATH = path.join(
  * The expected size of game account.
  */
 const GAME_STATE_SIZE = borsh.serialize(
-  GAME_SCHEMA,
+  SCHEMA,
   new GameState({
     playField: new Array(9).fill(
       new GameCell({
@@ -220,7 +220,7 @@ export async function gameReset(
     programId,
     data: Buffer.from(
       borsh.serialize(
-        GAME_SCHEMA,
+        SCHEMA,
         new GameInstruction({
           gameInstructionGameReset: new GameInstructionGameReset({
             playerOne: new PublicKeyBE({value: payer.publicKey.toBytes()}),
@@ -246,7 +246,7 @@ export async function makeTurn(
 ): Promise<void> {
   console.log(`executing makeTurn`);
   const data = borsh.serialize(
-    GAME_SCHEMA,
+    SCHEMA,
     new GameInstruction({gameInstructionMakeTurn: makeTurn}),
   );
   const instruction = new TransactionInstruction({
@@ -277,7 +277,7 @@ export async function reportPlayField(
   }
 
   const gameState: GameState = borsh.deserialize(
-    GAME_SCHEMA,
+    SCHEMA,
     GameState,
     accountInfo.data,
   );
