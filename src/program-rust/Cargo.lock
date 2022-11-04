@@ -55,6 +55,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "agsol-borsh-schema"
+version = "0.0.2"
+dependencies = [
+ "agsol-borsh-schema-derive",
+]
+
+[[package]]
+name = "agsol-borsh-schema-derive"
+version = "0.0.1"
+dependencies = [
+ "quote 1.0.21",
+ "syn 1.0.103",
+]
+
+[[package]]
 name = "ahash"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4066,6 +4081,7 @@ dependencies = [
 name = "tic-tac-toe-example"
 version = "0.0.1"
 dependencies = [
+ "agsol-borsh-schema",
  "borsh",
  "borsh-derive",
  "solana-program",

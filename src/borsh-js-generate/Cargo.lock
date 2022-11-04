@@ -5,8 +5,6 @@ version = 3
 [[package]]
 name = "agsol-borsh-schema"
 version = "0.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "689a15901649a39efba997c9b75b10496f0d8fc4b57244833dbbf17091a9f55e"
 dependencies = [
  "agsol-borsh-schema-derive",
  "anyhow",
@@ -19,8 +17,6 @@ dependencies = [
 [[package]]
 name = "agsol-borsh-schema-derive"
 version = "0.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60811a9517ead003173bfb969dd3fb86fd4454deacc1d84ea59d26a74452c751"
 dependencies = [
  "quote",
  "syn",
