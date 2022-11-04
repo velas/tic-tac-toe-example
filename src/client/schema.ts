@@ -1,6 +1,4 @@
-import Enum from './helpers_default/enum';
-import Struct from './helpers_default/struct';
-import PublicKeyBE from './helpers_default/be_pubkey';
+import {Struct, Enum, PublicKeyBE} from 'ts-borsh-schema';
 export class GameCell extends Enum {
   gameCellEmpty: GameCellEmpty | undefined;
   gameCellTic: GameCellTic | undefined;
