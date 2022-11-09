@@ -26,8 +26,7 @@
     "commander": "^8.1.0",
     "borsh": "^0.7.0",
     "mz": "^2.7.0",
-    "yaml": "^1.10.2",
-    "ts-borsh-schema": "git+https://github.com/dj8yfo/ts-borsh-schema.git"
+    "yaml": "^1.10.2"
   },
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.1",

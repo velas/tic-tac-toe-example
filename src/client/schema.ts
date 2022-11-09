@@ -1,4 +1,3 @@
-import {Struct, Enum} from 'ts-borsh-schema';
 import {BinaryReader, BinaryWriter} from 'borsh';
 import {PublicKey} from '@velas/web3';
 import BN from 'bn.js';
@@ -24,6 +23,28 @@ const borshPublicKeyHack = () => {
 };
 
 borshPublicKeyHack();
+
+class Struct {
+  constructor(properties: any) {
+    Object.keys(properties).map(key => {
+      this[key as keyof typeof this] = properties[key];
+    });
+  }
+}
+
+class Enum {
+  enum: string | undefined;
+
+  constructor(properties: any) {
+    if (Object.keys(properties).length !== 1) {
+      throw new Error('Enum can only take single value');
+    }
+    Object.keys(properties).map(key => {
+      this[key as keyof typeof this] = properties[key];
+      this.enum = key;
+    });
+  }
+}
 
 export class GameCell extends Enum {
   gameCellEmpty: GameCellEmpty | undefined;
