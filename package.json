@@ -24,7 +24,7 @@
   "dependencies": {
     "@velas/web3": "=0.1.7",
     "commander": "^8.1.0",
-    "borsh": "^0.5.0",
+    "borsh": "^0.7.0",
     "mz": "^2.7.0",
     "yaml": "^1.10.2",
     "ts-borsh-schema": "git+https://github.com/dj8yfo/ts-borsh-schema.git"

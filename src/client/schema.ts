@@ -1,4 +1,28 @@
-import {Struct, Enum, PublicKeyBE} from 'ts-borsh-schema';
+import { Struct, Enum } from 'ts-borsh-schema';
+import { BinaryReader, BinaryWriter } from "borsh"
+import { PublicKey } from '@velas/web3';
+import BN from "bn.js";
+
+const borshPublicKeyHack = () => {
+	// "borsh": "^0.7.0"
+
+	// agsol-borsh-schema/test-rs-output-ts-input/node_modules/borsh/lib/index.js:258
+	//             writer[`write${capitalizeFirstLetter(fieldType)}`](value);
+	//                                                               ^
+	// TypeError: writer[capitalizeFirstLetter(...)] is not a function
+  ;(BinaryReader.prototype as any).readPublicKeyHack = function () {
+    const reader = this as unknown as BinaryReader
+    const array = reader.readFixedArray(32)
+    return new PublicKey(array)
+  }
+  ;(BinaryWriter.prototype as any).writePublicKeyHack = function (value: PublicKey) {
+    const writer = this as unknown as BinaryWriter
+    writer.writeFixedArray(value.toBytes())
+  }
+}
+
+borshPublicKeyHack();
+
 export class GameCell extends Enum {
   gameCellEmpty: GameCellEmpty | undefined;
   gameCellTic: GameCellTic | undefined;
@@ -39,8 +63,8 @@ export class GameInstruction extends Enum {
 };
 
 export class GameInstructionGameReset extends Struct {
-  playerOne: PublicKeyBE | undefined;
-  playerTwo: PublicKeyBE | undefined;
+  playerOne: PublicKey | undefined;
+  playerTwo: PublicKey | undefined;
 };
 
 export class GameInstructionMakeTurn extends Struct {
@@ -51,8 +75,8 @@ export class GameInstructionMakeTurn extends Struct {
 export class GameState extends Struct {
   playField: GameCell[] | undefined;
   status: GameStatus | undefined;
-  playerOne: PublicKeyBE | undefined;
-  playerTwo: PublicKeyBE | undefined;
+  playerOne: PublicKey | undefined;
+  playerTwo: PublicKey | undefined;
 };
 
 export const SCHEMA = new Map<any, any>([
@@ -139,8 +163,8 @@ export const SCHEMA = new Map<any, any>([
             GameInstructionGameReset,
             {
                 kind: 'struct', fields: [
-			['playerOne', PublicKeyBE],
-			['playerTwo', PublicKeyBE],
+			['playerOne', 'publicKeyHack'],
+			['playerTwo', 'publicKeyHack'],
                 ],
             },
     ],
@@ -159,18 +183,9 @@ export const SCHEMA = new Map<any, any>([
                 kind: 'struct', fields: [
 			['playField', [GameCell, 9]],
 			['status', GameStatus],
-			['playerOne', PublicKeyBE],
-			['playerTwo', PublicKeyBE],
+			['playerOne', 'publicKeyHack'],
+			['playerTwo', 'publicKeyHack'],
                 ],
             },
     ],
-
-  [
-    PublicKeyBE,
-    {
-      kind: 'struct',
-      fields: [['value', [32]]],
-    },
-  ]
-
 ]);

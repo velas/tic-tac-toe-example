@@ -22,8 +22,6 @@ import {
   createKeypairFromFile,
 } from './utils';
 
-import {PublicKeyBE} from 'ts-borsh-schema';
-
 import {
   GameCell,
   GameCellTac,
@@ -71,8 +69,8 @@ const GAME_STATE_SIZE = borsh.serialize(
     status: new GameStatus({
       gameStatusPlayerOneTurn: new GameStatusPlayerOneTurn({}),
     }),
-    playerOne: new PublicKeyBE({value: new Uint8Array(32)}),
-    playerTwo: new PublicKeyBE({value: new Uint8Array(32)}),
+    playerOne: new PublicKey(new Uint8Array(32)),
+    playerTwo: new PublicKey(new Uint8Array(32)),
   }),
 ).length;
 
@@ -225,8 +223,8 @@ export async function gameReset(
         SCHEMA,
         new GameInstruction({
           gameInstructionGameReset: new GameInstructionGameReset({
-            playerOne: new PublicKeyBE({value: payer.publicKey.toBytes()}),
-            playerTwo: new PublicKeyBE({value: secondPlayer.toBytes()}),
+            playerOne: payer.publicKey,
+            playerTwo: secondPlayer,
           }),
         }),
       ),
@@ -304,7 +302,7 @@ export function printGameState(gameState: GameState) {
     process.stdout.write('\n');
   }
 
-  console.log('Player one: ' + gameState.playerOne!.solPubKey);
-  console.log('Player two: ' + gameState.playerTwo!.solPubKey);
+  console.log('Player one: ' + gameState.playerOne);
+  console.log('Player two: ' + gameState.playerTwo);
   console.log('Status: ' + gameState.status!.enum);
 }

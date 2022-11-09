@@ -1,15 +1,11 @@
-use std::{path::Path, fs};
+use tic_tac_toe::{GameCell, GameStatus, GameInstruction, GameState};
+use agsol_borsh_schema::{Layout, construct_layouts, generate_output};
+use borsh::BorshSchema;
 
 
-fn generate_borsh_schema<P: AsRef<Path>>(input_path: P, schema_path: P) -> anyhow::Result<()> {
-    fs::create_dir_all(&schema_path)?;
-    let layouts = agsol_borsh_schema::generate_layouts(input_path)?;
-    agsol_borsh_schema::generate_output(&layouts, schema_path)
-}
 
-fn main() -> anyhow::Result<()> {
+fn main() {
 
-    let result =generate_borsh_schema("./src/program-rust/src", "./src/client");
-    println!("{:?}", result);
-    result
+    let layouts = construct_layouts!(GameCell, GameStatus, GameInstruction, GameState);
+    generate_output(&layouts, "./src/client").unwrap();
 }

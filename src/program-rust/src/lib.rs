@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
-use borsh::{BorshDeserialize, BorshSerialize};
-use agsol_borsh_schema::BorshSchemaTS;
+use borsh::{BorshSchema, BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint,
@@ -22,17 +21,17 @@ static WIN_CONDITIONS: [[usize; 3]; 8] = [
     [2, 4, 6]
 ];
 
-#[derive(BorshSchemaTS, BorshSerialize, BorshDeserialize, Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(BorshSchema, BorshSerialize, BorshDeserialize, Copy, Clone, PartialEq, Eq, Debug)]
 pub enum GameCell { Empty, Tic, Tac }
 
 impl Default for GameCell {
     fn default() -> Self { GameCell::Empty }
 }
 
-#[derive(BorshSchemaTS, BorshSerialize, BorshDeserialize, Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(BorshSchema, BorshSerialize, BorshDeserialize, Debug, PartialEq, Eq, Clone, Copy)]
 pub enum GameStatus { Uninitialized, PlayerOneTurn, PlayerTwoTurn, GameEnd }
 
-#[derive(BorshSchemaTS, BorshSerialize, BorshDeserialize, Debug)]
+#[derive(BorshSchema, BorshSerialize, BorshDeserialize, Debug)]
 pub enum GameInstruction {
     GameReset {
         player_one: Pubkey,
@@ -45,7 +44,7 @@ pub enum GameInstruction {
 }
 
 /// Define the type of state stored in game account
-#[derive(BorshSchemaTS, BorshSerialize, BorshDeserialize, Debug)]
+#[derive(BorshSchema, BorshSerialize, BorshDeserialize, Debug)]
 pub struct GameState {
     pub play_field: [GameCell; 9],
     pub status: GameStatus,
