@@ -5,7 +5,7 @@ version = 3
 [[package]]
 name = "agsol-borsh-schema"
 version = "0.0.2"
-source = "git+https://github.com/dj8yfo/borsh-schema-derive.git#23dfe965b61f21f5101e8c0779e9ed9b84295e5a"
+source = "git+https://github.com/dj8yfo/borsh-schema-derive.git#df426bb39a51dc86b5485d1f544b0b6637c95b3b"
 dependencies = [
  "anyhow",
  "borsh",
