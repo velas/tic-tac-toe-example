@@ -1,5 +1,5 @@
 use tic_tac_toe::{GameCell, GameStatus, GameInstruction, GameState};
-use agsol_borsh_schema::{construct_layouts, generate_output};
+use borsh_schema_derive::{construct_layouts, generate_output};
 
 
 fn main() {

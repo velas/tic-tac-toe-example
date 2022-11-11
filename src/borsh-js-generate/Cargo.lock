@@ -3,18 +3,6 @@
 version = 3
 
 [[package]]
-name = "agsol-borsh-schema"
-version = "0.0.2"
-source = "git+https://github.com/dj8yfo/borsh-schema-derive.git#df426bb39a51dc86b5485d1f544b0b6637c95b3b"
-dependencies = [
- "anyhow",
- "borsh",
- "heck",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "ahash"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -155,10 +143,22 @@ dependencies = [
 name = "borsh-js-generate"
 version = "0.1.0"
 dependencies = [
- "agsol-borsh-schema",
  "anyhow",
  "borsh",
+ "borsh-schema-derive",
  "tic-tac-toe-example",
+]
+
+[[package]]
+name = "borsh-schema-derive"
+version = "0.0.2"
+source = "git+https://github.com/velas/borsh-schema-derive.git#e19fc438182f718ed5d179a22d302be7442a959e"
+dependencies = [
+ "anyhow",
+ "borsh",
+ "heck",
+ "quote",
+ "syn",
 ]
 
 [[package]]
