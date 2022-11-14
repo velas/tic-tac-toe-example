@@ -4,4 +4,8 @@
 /dist
 .env
 src/client/util/store
+src/client/schema.ts
 test-ledger/
+.vim-bookmarks
+/game
+target

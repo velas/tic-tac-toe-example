@@ -12,6 +12,13 @@ The project comprises of:
 * An on-chain tic-tac-toe program with game logic
 * A client that can initialize new game and play it with other player
 
+# To generate serialization schema from rust program
+```bash
+npm run run:borsh-gen
+```
+
+The output will go to `./src/client/schema.ts`
+
 ## Quick start
 The following dependencies are required to build and run this example, depending
 on your OS, they may already be installed:
@@ -19,6 +26,7 @@ on your OS, they may already be installed:
 - Install node (v14 recommended)
 - Install npm
 - Install the latest Rust stable from https://rustup.rs/
+    - on problems with `cargo test-bpf` see [issue](https://github.com/solana-labs/example-helloworld/issues/451)
 - Install Velas Tool Suite from
   https://docs.velas.com/cli/install-velas-cli-tools
 
@@ -48,7 +56,7 @@ npm run build:program-rust
 
 Deploy it:
 ```bash
-velas program deploy dist/program/helloworld.so
+velas program deploy dist/program/tic_tac_toe.so
 ```
 
 ## Initializing and playing the game
@@ -69,7 +77,7 @@ Creating game account: 65FuAgjgSGKqZs6cWBLvKgqd3oD5DPbwvVhDRf7RZos5
 
 After the game has been initialized, we can check its state (don't forget to replace game account pubkey with your own here and after):
 ```bash
-$ npm start game-state 65FuAgjgSGKqZs6cWBLvKgqd3oD5DPbwvVhDRf7RZos5
+$ npm start game-state 65FuAgjgSGKqZs6cWBLvKgqd3oD5DPbwvVhDRf7RZos5 /path/to/keypairs/player1.json
 ```
 
 Game field shoud be empty, pubkeys of players authorized to play should be set up (pubkeys of players will be different). The status says that it is now the turn of the first player:

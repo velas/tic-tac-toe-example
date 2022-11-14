@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use borsh::{BorshDeserialize, BorshSerialize, BorshSchema};
+use borsh::{BorshSchema, BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint,
